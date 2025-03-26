@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import Header from '../../components/Header/Header';
 import TabSelector from '../../components/TabSelector/TabSelector';
 import LoginForm from '../../components/LoginForm/LoginForm';
+import SocialFooter from '../../components/SocialFooter/SocialFooter';
 import styles from './styles';
 
 const LoginScreen = () => {
@@ -51,6 +52,8 @@ const LoginScreen = () => {
           />
         </View>
       </View>
+      
+      <SocialFooter />
     </SafeAreaView>
   );
 };

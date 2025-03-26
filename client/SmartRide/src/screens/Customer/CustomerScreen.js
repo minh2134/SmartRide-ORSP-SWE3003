@@ -12,9 +12,6 @@ const CustomerScreen = () => {
         <Text style={styles.message}>
           Customer Dashboard
         </Text>
-        <Text style={styles.subMessage}>
-          This is a placeholder for the customer dashboard screen.
-        </Text>
       </View>
     </SafeAreaView>
   );

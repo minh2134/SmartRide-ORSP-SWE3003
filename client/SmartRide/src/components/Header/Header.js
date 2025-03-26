@@ -6,7 +6,7 @@ import styles from './styles';
 const Header = ({ title }) => {
   const navigation = useNavigation();
 
-  // Function renamed from handleLogoPress to handleHeaderDisplay
+  // Implement Header Display on each screen
   const handleHeaderDisplay = () => {
     navigation.navigate('Login');
   };
@@ -28,8 +28,9 @@ const Header = ({ title }) => {
         <Text style={styles.title}>{title}</Text>
       </View>
       
+      {/* Light/Dark Mode Toggle - Not implemented yet*/}
       <TouchableOpacity style={styles.themeToggle}>
-        <Text style={styles.themeIcon}>☀️</Text>
+        <Text style={styles.themeIcon}>☀️🌙</Text>
       </TouchableOpacity>
     </View>
   );
