@@ -3,19 +3,18 @@ import { View, Text, SafeAreaView } from 'react-native';
 import Header from '../../components/Header/Header';
 import styles from './styles';
 
-// The main activity screen for the customer
-const CustomerScreen = () => {
+const CustomerRideHistoryScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Customer Dashboard" />
+      <Header title="Ride History" />
       
       <View style={styles.content}>
         <Text style={styles.message}>
-          Customer Dashboard
+          Ride History
         </Text>
       </View>
     </SafeAreaView>
   );
 };
 
-export default CustomerScreen; 
+export default CustomerRideHistoryScreen; 
