@@ -8,7 +8,7 @@ export default StyleSheet.create({
     justifyContent: 'space-between',
     height: 60,
     paddingHorizontal: 15,
-    backgroundColor: colors.background,
+    backgroundColor: colors.primary,
     borderBottomWidth: 1,
     borderBottomColor: colors.lightGray,
     elevation: 3,
@@ -31,7 +31,7 @@ export default StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
+    color: colors.background,
   },
   themeToggle: {
     flex: 1,
@@ -39,5 +39,6 @@ export default StyleSheet.create({
   },
   themeIcon: {
     fontSize: 20,
+    color: colors.background,
   }
 }); 
