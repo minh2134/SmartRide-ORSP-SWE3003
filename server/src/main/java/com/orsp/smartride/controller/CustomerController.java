@@ -1,9 +1,14 @@
 package com.orsp.smartride.controller;
 
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.HtmlUtils;
+
+import com.orsp.smartride.Greetings;
+import com.orsp.smartride.HelloMessage;
 
 @RestController
 public class CustomerController {
@@ -12,5 +17,12 @@ public class CustomerController {
 	@GetMapping("/customer/auth")
 	public String greeting() {
 		return "Hello, World!";
+	}
+
+	@MessageMapping("/hello")
+	@SendTo("/topic/greetings")
+	public Greetings greetings(HelloMessage message) throws Exception {
+		Thread.sleep(1000);
+		return new Greetings("Hello, " + HtmlUtils.htmlEscape(message.getName() + "!"));
 	}
 }

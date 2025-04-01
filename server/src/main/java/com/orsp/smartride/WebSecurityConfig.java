@@ -19,7 +19,6 @@ public class WebSecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 			.authorizeHttpRequests((requests) -> requests
-				.requestMatchers("/").permitAll()
 				.anyRequest().authenticated()
 			)
 			.httpBasic(Customizer.withDefaults());
@@ -31,8 +30,8 @@ public class WebSecurityConfig {
 	public UserDetailsService userDetailsService() {
 		UserDetails user =
 			User.withDefaultPasswordEncoder()
-				.username("user")
-				.password("aa")
+				.username("customer")
+				.password("")
 				.roles("USER")
 				.build();
 

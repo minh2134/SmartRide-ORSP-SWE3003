@@ -7,10 +7,10 @@ abstract public class Customer {
 	
 	// TODO: implementing making a ride
 	public void makeRide() {
-		//TODO: make a Ride class, then associate with it
+		// TODO: make a Ride class, then associate with it
 	}
 	
-	// TODO: implementing (mock-up version of) payment
+	// TODO: implementing (a mock-up version of) payment
 	public void pay() {}
 
 	// TODO: implementing getting driver's location and handle it
