@@ -1,21 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
-import { testWebSocketConnection } from './src/utils/webSocketUtils';
 
 const App = () => {
-  useEffect(() => {
-    // Test the WebSocket connection when the app loads
-    const client = testWebSocketConnection();
-    
-    // Cleanup on unmount
-    return () => {
-      if (client && client.connected) {
-        client.deactivate();
-      }
-    };
-  }, []);
-
   return (
     <NavigationContainer>
       <AppNavigator />

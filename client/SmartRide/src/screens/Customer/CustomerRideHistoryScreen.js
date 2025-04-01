@@ -3,7 +3,6 @@ import { View, Text, SafeAreaView } from 'react-native';
 import Header from '../../components/Header/Header';
 import styles from './styles';
 
-// Use to display customer ride history
 const CustomerRideHistoryScreen = () => {
   return (
     <SafeAreaView style={styles.container}>

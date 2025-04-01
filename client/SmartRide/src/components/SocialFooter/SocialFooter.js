@@ -3,7 +3,6 @@ import { View, TouchableOpacity, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from './styles';
 
-// Use to display social media links and "copyright" *blink blink* :3
 const SocialFooter = () => {
   const navigation = useNavigation();
 

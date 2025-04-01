@@ -2,8 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import styles from './styles';
 
-
-// Use for customer and driver tabs
 const TabSelector = ({ activeTab, onTabChange }) => {
   return (
     <View style={styles.tabContainer}>

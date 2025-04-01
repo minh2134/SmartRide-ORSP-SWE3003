@@ -17,7 +17,7 @@ const LoginScreen = () => {
   };
 
   const handleLogin = (userType) => {
-    // For now, just navigate to the appropriate screen, will handle the logic with the backend later
+    // For now, just navigate to the appropriate screen
     if (userType === 'customer') {
       navigation.navigate('Customer');
     } else {
