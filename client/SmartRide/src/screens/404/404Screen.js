@@ -3,6 +3,7 @@ import { View, Text, SafeAreaView, TouchableOpacity } from 'react-native';
 import Header from '../../components/Header/Header';
 import styles from './styles';
 
+// Use to troll users =))
 const NotFoundScreen = ({ navigation }) => {
   const handleBackToLogin = () => {
     navigation.navigate('Login');

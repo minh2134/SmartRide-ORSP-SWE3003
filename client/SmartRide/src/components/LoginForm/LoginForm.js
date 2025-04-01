@@ -6,6 +6,7 @@ const LoginForm = ({ userType, onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+  // Handle Login logic here later :)
   const handleLogin = () => {
     onLogin(userType, username, password);
   };
