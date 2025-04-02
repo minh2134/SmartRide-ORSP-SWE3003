@@ -1,4 +1,4 @@
-package com.orsp.smartride;
+package com.orsp.smartride.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

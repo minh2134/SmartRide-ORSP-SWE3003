@@ -1,4 +1,4 @@
-package com.orsp.smartride;
+package com.orsp.smartride.dataStructures;
 
 public class Greetings {
 
