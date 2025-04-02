@@ -28,13 +28,19 @@ public class WebSecurityConfig {
 
 	@Bean
 	public UserDetailsService userDetailsService() {
-		UserDetails user =
+		UserDetails customer =
 			User.withDefaultPasswordEncoder()
 				.username("customer")
 				.password("")
 				.roles("USER")
 				.build();
+		UserDetails driver =
+			User.withDefaultPasswordEncoder()
+				.username("driver")
+				.password("")
+				.roles("USER")
+				.build();
 
-		return new InMemoryUserDetailsManager(user);
+		return new InMemoryUserDetailsManager(customer, driver);
 	}
 }
