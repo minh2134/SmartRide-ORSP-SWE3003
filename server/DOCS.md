@@ -1,8 +1,18 @@
 # API Documentation
-## Note on authentication
-You will need to provide Basic HTTP Authentication to use the APIs listed below
+## REST endpoints
+### GET /rest/fare
+Return the fare rate. Schema:
+```
+{
+    fare: float // 2-decimal rounded
+}
+```
 
 ## Websocket endpoint
+*Note on authentication*
+You will need to provide Basic HTTP Authentication to use the APIs listed below
+
+
 ### /ws
 End point to establish websocket STOMP connection
 

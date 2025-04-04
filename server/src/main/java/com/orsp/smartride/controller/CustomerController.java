@@ -10,7 +10,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
 
 import com.orsp.smartride.dataStructures.Greetings;
@@ -18,7 +18,7 @@ import com.orsp.smartride.dataStructures.HelloMessage;
 import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 
-@RestController
+@Controller
 public class CustomerController {
 	
 	// define a Spring simple messager, autowire it to then use it for websocket
@@ -28,10 +28,11 @@ public class CustomerController {
 
 	@Autowired
 	private ConcurrentHashMap<String, SRCustomer> customers;
-
+	
+	
 	@MessageMapping("/customer/info")
 	@SendToUser("/topic/info")
-	public UserInfo userInfo(Principal principal) throws Exception {
+	UserInfo userInfo(Principal principal) throws Exception {
 		SRCustomer customer = customers.get(principal.getName());
 		System.out.println(customer.userInfo.name);
 		return customer.userInfo;
