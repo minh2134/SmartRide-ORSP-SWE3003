@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS customers (
 	name		TEXT,
 	age		INTEGER NOT NULL,
 	sex		TEXT,
+	phone		TEXT,
 	FOREIGN KEY(username) REFERENCES users(username),
 	FOREIGN KEY(sex) REFERENCES sex(name)
 );
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS drivers (
 	name 		TEXT,
 	age 		INTEGER NOT NULL,
 	sex 		TEXT,
+	phone 		TEXT,
 	license 	TEXT,
 	FOREIGN KEY(username) REFERENCES users(username),
 	FOREIGN KEY(sex) REFERENCES sex(name)

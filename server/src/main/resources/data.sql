@@ -8,9 +8,9 @@ INSERT INTO authorities (username, authority) VALUES
 	('driver', 'ROLE_USER'),
 	('driverAlt', 'ROLE_USER');
 
-INSERT INTO customers (username, name, age, sex) VALUES 
-	('customer', 'Puout', 46, 'male');
+INSERT INTO customers (username, name, age, phone, sex) VALUES 
+	('customer', 'Puout', 46, '0903456879', 'male');
 
-INSERT INTO drivers (username, name, age, sex, license) VALUES
-	('driver', 'Dump', 23, 'male', 'DSCKSAH'),
-	('driverAlt', 'Zelenlandd', 32, 'male', 'UKREINE');
+INSERT INTO drivers (username, name, age, phone, sex, license) VALUES
+	('driver', 'Dump', 23, '0908321456', 'male', 'DSCKSAH'),
+	('driverAlt', 'Zelenlandd', 32, '0928222333', 'male', 'UKREINE');

@@ -19,6 +19,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
 		// fall back to SockJS (emulation) if WebSocket is not available
-		registry.addEndpoint("/ws/customer");
+		registry.addEndpoint("/ws");
 	}
 }

@@ -1,14 +1,18 @@
 const stompClient = new StompJs.Client({
-    brokerURL: 'ws://localhost:8080/ws/customer'
+    brokerURL: 'ws://localhost:8080/ws'
 });
 
 stompClient.onConnect = (frame) => {
     setConnected(true);
     console.log('Connected: ' + frame);
-    stompClient.subscribe('/user/topic/greetings', (greeting) => {
-        showGreeting(JSON.parse(greeting.body).content);
+    stompClient.subscribe('/user/topic/response', (greeting) => {
+        showUserInfo(JSON.parse(greeting.body).name);
     });
 };
+
+function showUserInfo(message) {
+	$("#greetings").append("<tr><td>" + message + "</td></tr>");
+}
 
 stompClient.onWebSocketError = (error) => {
     console.error('Error with websocket', error);
@@ -43,7 +47,7 @@ function disconnect() {
 
 function sendName() {
     stompClient.publish({
-        destination: "/app/spechello",
+        destination: "/app/customer/info",
         body: JSON.stringify({'name': $("#name").val()})
     });
 }
