@@ -11,7 +11,9 @@ abstract public class Customer {
 	}
 	
 	// TODO: implementing (a mock-up version of) payment
-	public void pay() {}
+	public boolean pay() {
+		return true;
+	}
 
 	// TODO: implementing getting driver's location and handle it
 	public void requestLoc() {}
