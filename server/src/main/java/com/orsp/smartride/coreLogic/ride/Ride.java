@@ -6,10 +6,18 @@ import com.orsp.smartride.coreLogic.driver.Driver;
 public class Ride {
 	Customer customer;
 	Driver driver;
+	public String pickupLoc;
+	String dropoffLoc;
 
-	public Ride(Customer customer, Driver driver) {
+	public Ride(Customer customer, String pickupLoc, String dropoffLoc) {
 		this.customer = customer;
-		this.driver = driver;
+		this.pickupLoc = pickupLoc;
+		this.dropoffLoc = dropoffLoc;
+	}
+
+	public boolean findDriver() {
+		// TODO: query database, find driver, associate, then return the status
+		return true;
 	}
 
 	// TODO: returning driver location

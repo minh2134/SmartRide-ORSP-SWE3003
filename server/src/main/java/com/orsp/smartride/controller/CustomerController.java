@@ -13,12 +13,16 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
 
+import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.Greetings;
 import com.orsp.smartride.dataStructures.HelloMessage;
+import com.orsp.smartride.dataStructures.Response;
+import com.orsp.smartride.dataStructures.RideRequest;
 import com.orsp.smartride.dataStructures.UserInfo;
+import com.orsp.smartride.dataStructures.userResponse.UserInfoResponse;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 
-@Controller
+@Controller("cusController")
 public class CustomerController {
 	
 	// define a Spring simple messager, autowire it to then use it for websocket
@@ -31,11 +35,27 @@ public class CustomerController {
 	
 	
 	@MessageMapping("/customer/info")
-	@SendToUser("/topic/info")
-	UserInfo userInfo(Principal principal) throws Exception {
+	@SendToUser("/topic/customer/response")
+	Response userInfo(Principal principal) throws Exception {
+		String method = "/customer/info";
 		SRCustomer customer = customers.get(principal.getName());
-		System.out.println(customer.userInfo.name);
-		return customer.userInfo;
+		
+		UserInfoResponse result = new UserInfoResponse(customer.userInfo);
+		return new Response(200, method, result);
+	}
+
+	@MessageMapping("/customer/makeride")
+	@SendToUser("/topic/customer/response")
+	Response makeRide(Principal principal, @Payload RideRequest rrq) throws Exception {
+		String method = "/customer/makeride";
+		SRCustomer customer = customers.get(principal.getName());
+		Ride ride = customer.makeRide(rrq.pickupLoc, rrq.dropoffLoc);
+
+		return new Response(200, method);
+	}
+
+	public void rideDone() {
+		System.out.println("Wait this shit actually works?");
 	}
 
 	// TODO: below is test code, implement the real thing later

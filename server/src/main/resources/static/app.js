@@ -5,7 +5,7 @@ const stompClient = new StompJs.Client({
 stompClient.onConnect = (frame) => {
     setConnected(true);
     console.log('Connected: ' + frame);
-    stompClient.subscribe('/user/topic/info', (greeting) => {
+    stompClient.subscribe('/user/topic/customer/response', (greeting) => {
         showUserInfo(greeting.body);
     });
 };
@@ -48,7 +48,7 @@ function disconnect() {
 function sendName() {
     stompClient.publish({
         destination: "/app/customer/info",
-        body: JSON.stringify({'name': $("#name").val()})
+        body: JSON.stringify({'pickupLoc': $("#name").val(), 'dropoffLoc': $("#name2").val()})
     });
 }
 
