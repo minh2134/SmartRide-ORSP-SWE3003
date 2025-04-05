@@ -47,7 +47,7 @@ function disconnect() {
 
 function sendName() {
     stompClient.publish({
-        destination: "/app/customer/info",
+        destination: "/app/customer/makeride",
         body: JSON.stringify({'pickupLoc': $("#name").val(), 'dropoffLoc': $("#name2").val()})
     });
 }

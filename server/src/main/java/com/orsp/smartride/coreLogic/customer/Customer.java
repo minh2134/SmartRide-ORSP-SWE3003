@@ -1,25 +1,23 @@
 package com.orsp.smartride.coreLogic.customer;
 
+import com.orsp.smartride.coreLogic.payment.Payment;
 import com.orsp.smartride.coreLogic.ride.Ride;
 
 abstract public class Customer {
-	Ride ride;
+	protected Ride ride;
 	
-	// TODO: implementing making a ride
-	public void makeRide() {
-		// TODO: make a Ride class, then associate with it
+	public Ride makeRide(String pickupLoc, String dropoffLoc) {
+		ride = new Ride(this, pickupLoc, dropoffLoc);
+		boolean result = ride.findDriver();
+		return ride;
 	}
 	
-	// TODO: implementing (a mock-up version of) payment
-	public boolean pay() {
-		return true;
+	public boolean pay(Payment paymentMethod) {
+		return paymentMethod.pay();
 	}
 
-	// TODO: implementing getting driver's location and handle it
-	public void requestLoc() {}
-
-	public boolean isRideDone() {
-		// TODO: query the associated Ride class to get its status
-		return false;
+	public void markRideDone() {
+		ride = null;
+		return;
 	}
 }

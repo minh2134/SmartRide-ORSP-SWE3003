@@ -18,11 +18,11 @@ import com.orsp.smartride.dataStructures.Greetings;
 import com.orsp.smartride.dataStructures.HelloMessage;
 import com.orsp.smartride.dataStructures.Response;
 import com.orsp.smartride.dataStructures.RideRequest;
-import com.orsp.smartride.dataStructures.UserInfo;
+import com.orsp.smartride.dataStructures.userResponse.MakeRideResponse;
 import com.orsp.smartride.dataStructures.userResponse.UserInfoResponse;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 
-@Controller("cusController")
+@Controller
 public class CustomerController {
 	
 	// define a Spring simple messager, autowire it to then use it for websocket
@@ -50,8 +50,9 @@ public class CustomerController {
 		String method = "/customer/makeride";
 		SRCustomer customer = customers.get(principal.getName());
 		Ride ride = customer.makeRide(rrq.pickupLoc, rrq.dropoffLoc);
-
-		return new Response(200, method);
+		
+		MakeRideResponse result = new MakeRideResponse(ride);
+		return new Response(200, method, result);
 	}
 
 	public void rideDone() {
@@ -60,7 +61,7 @@ public class CustomerController {
 
 	// TODO: below is test code, implement the real thing later
 	@MessageMapping("/spechello")
-	public void specGreetings(@Payload HelloMessage message, @Header("simpSessionId") String sessionID) throws Exception {
+	public void specGreetings(@Payload HelloMessage message) throws Exception {
 		Greetings out = new Greetings("Hello, " + HtmlUtils.htmlEscape(message.getName() + "!"));
 		simpmsg.convertAndSendToUser("driver", "topic/greetings", out);
 	}

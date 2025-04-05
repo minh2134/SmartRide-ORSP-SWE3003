@@ -6,7 +6,7 @@ import com.orsp.smartride.coreLogic.driver.Driver;
 public class Ride {
 	Customer customer;
 	Driver driver;
-	public String pickupLoc;
+	String pickupLoc;
 	String dropoffLoc;
 
 	public Ride(Customer customer, String pickupLoc, String dropoffLoc) {
@@ -22,4 +22,20 @@ public class Ride {
 
 	// TODO: returning driver location
 	public void getDriverLoc() {}
+
+	public Customer getCustomer() {
+		return customer;
+	}
+
+	public Driver getDriver() {
+		return driver;
+	}
+
+	public String getPickupLoc() {
+		return pickupLoc;
+	}
+
+	public String getDropoffLoc() {
+		return dropoffLoc;
+	}
 }

@@ -1,9 +1,15 @@
 package com.orsp.smartride.implementations.customer;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.orsp.smartride.controller.CustomerController;
 import com.orsp.smartride.coreLogic.customer.Customer;
 import com.orsp.smartride.dataStructures.UserInfo;
 
 public class SRCustomer extends Customer {
+	
+	@Autowired
+	private CustomerController cusController;
 	
 	public UserInfo userInfo;
 
@@ -21,5 +27,12 @@ public class SRCustomer extends Customer {
 
 	public UserInfo getUserInfo() {
 		return userInfo;
+	}
+
+	@Override
+	public void markRideDone(){
+		ride = null; // delete reference to said ride
+		cusController.rideDone();
+		
 	}
 }

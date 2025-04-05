@@ -2,17 +2,17 @@ package com.orsp.smartride.dataStructures;
 
 public class Greetings {
 
-  private String content;
+  private String conten;
 
   public Greetings() {
   }
 
   public Greetings(String content) {
-    this.content = content;
+    this.conten = content;
   }
 
   public String getContent() {
-    return content;
+    return conten;
   }
 
 }
