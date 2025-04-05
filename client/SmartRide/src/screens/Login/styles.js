@@ -1,44 +1,46 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import colors from '../../theme/colors';
 
+const { width } = Dimensions.get('window');
+
 export default StyleSheet.create({
-  container: {
+  containerWithBackground: {
     flex: 1,
     backgroundColor: colors.background,
   },
+  container: {
+    flex: 1,
+  },
   content: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    paddingTop: 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
   },
   bigLogo: {
-    width: 300,
-    height: 300,
-    marginBottom: -100,
-    marginTop: -200
+    width: width * 0.6,
+    height: width * 0.3,
+    tintColor: colors.primary,
   },
   heading: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
+    color: colors.textDark,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subheading: {
+    fontSize: 16,
+    color: colors.textMedium,
     marginBottom: 30,
-    color: colors.text,
+    textAlign: 'center',
   },
   loginContainer: {
     width: '100%',
     maxWidth: 400,
-    padding: 20,
-    borderRadius: 12,
-    backgroundColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    marginBottom: 20,
   },
 }); 
