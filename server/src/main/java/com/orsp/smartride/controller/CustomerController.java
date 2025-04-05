@@ -18,9 +18,12 @@ import com.orsp.smartride.dataStructures.Greetings;
 import com.orsp.smartride.dataStructures.HelloMessage;
 import com.orsp.smartride.dataStructures.Response;
 import com.orsp.smartride.dataStructures.RideRequest;
+import com.orsp.smartride.dataStructures.userResponse.ErrorResponse;
 import com.orsp.smartride.dataStructures.userResponse.MakeRideResponse;
 import com.orsp.smartride.dataStructures.userResponse.UserInfoResponse;
+import com.orsp.smartride.dataStructures.userResponse.UserResponse;
 import com.orsp.smartride.implementations.customer.SRCustomer;
+import com.orsp.smartride.implementations.payment.GenericPaymentMethod;
 
 @Controller
 public class CustomerController {
@@ -32,6 +35,9 @@ public class CustomerController {
 
 	@Autowired
 	private ConcurrentHashMap<String, SRCustomer> customers;
+
+	@Autowired
+	private GenericPaymentMethod genericPaymentMethod;
 	
 	
 	@MessageMapping("/customer/info")
@@ -49,6 +55,9 @@ public class CustomerController {
 	Response makeRide(Principal principal, @Payload RideRequest rrq) throws Exception {
 		String method = "/customer/makeride";
 		SRCustomer customer = customers.get(principal.getName());
+		if (!customer.pay(genericPaymentMethod)) {
+			return new Response(401, method, new ErrorResponse("Payment failed"));
+		}
 		Ride ride = customer.makeRide(rrq.pickupLoc, rrq.dropoffLoc);
 		
 		MakeRideResponse result = new MakeRideResponse(ride);
