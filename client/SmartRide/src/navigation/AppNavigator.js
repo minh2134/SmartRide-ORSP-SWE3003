@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Feather';
@@ -6,23 +6,30 @@ import Icon from 'react-native-vector-icons/Feather';
 import LoginScreen from '../screens/Login/LoginScreen';
 import CustomerScreen from '../screens/Customer/CustomerScreen';
 import CustomerProfileScreen from '../screens/Customer/CustomerProfileScreen';
+import CustomerRideHistoryScreen from '../screens/Customer/CustomerRideHistoryScreen';
 import DriverScreen from '../screens/Driver/DriverScreen';
 import NotFoundScreen from '../screens/404/404Screen';
+import { useAuth } from '../contexts/AuthContext';
 import colors from '../theme/colors';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Customer Tab Navigator as a nested component
-const CustomerTabs = ({ route }) => {
-  const { username, isAuthenticated } = route.params || {};
-  
+const CustomerTabs = () => {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.gray,
+        tabBarActiveTintColor: '#000000',
+        tabBarInactiveTintColor: '#777777',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#EEEEEE',
+          height: 60,
+          paddingBottom: 10,
+          paddingTop: 5,
+        }
       }}
     >
       <Tab.Screen
@@ -34,7 +41,16 @@ const CustomerTabs = ({ route }) => {
             <Icon name="home" color={color} size={size} />
           ),
         }}
-        initialParams={{ username, isAuthenticated }}
+      />
+      <Tab.Screen
+        name="CustomerRideHistory"
+        component={CustomerRideHistoryScreen}
+        options={{
+          tabBarLabel: 'Rides',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="list" color={color} size={size} />
+          ),
+        }}
       />
       <Tab.Screen
         name="CustomerProfile"
@@ -45,7 +61,6 @@ const CustomerTabs = ({ route }) => {
             <Icon name="user" color={color} size={size} />
           ),
         }}
-        initialParams={{ username, isAuthenticated }}
       />
     </Tab.Navigator>
   );
@@ -53,17 +68,34 @@ const CustomerTabs = ({ route }) => {
 
 // AppNavigator is the main navigator for the app
 const AppNavigator = () => {
+  const { isAuthenticated, isLoading, userType } = useAuth();
+
+  if (isLoading) {
+    // You could replace this with a splash screen component
+    return null;
+  }
+
   return (
     <Stack.Navigator 
-      initialRouteName="Login"
+      initialRouteName={isAuthenticated ? (userType === 'customer' ? 'Customer' : 'Driver') : 'Login'}
       screenOptions={{
         headerShown: false,
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Customer" component={CustomerTabs} />
-      <Stack.Screen name="Driver" component={DriverScreen} />
-      <Stack.Screen name="NotFound" component={NotFoundScreen} />
+      {isAuthenticated ? (
+        // Authenticated routes
+        <>
+          <Stack.Screen name="Customer" component={CustomerTabs} />
+          <Stack.Screen name="Driver" component={DriverScreen} />
+          <Stack.Screen name="NotFound" component={NotFoundScreen} />
+        </>
+      ) : (
+        // Non-authenticated routes
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="NotFound" component={NotFoundScreen} />
+        </>
+      )}
     </Stack.Navigator>
   );
 };

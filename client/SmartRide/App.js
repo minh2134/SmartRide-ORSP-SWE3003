@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { testWebSocketConnection } from './src/utils/webSocketUtils';
+import { AuthProvider } from './src/contexts/AuthContext';
 
 const App = () => {
   useEffect(() => {
@@ -17,9 +18,11 @@ const App = () => {
   }, []);
 
   return (
-    <NavigationContainer>
-      <AppNavigator />
-    </NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </AuthProvider>
   );
 };
 

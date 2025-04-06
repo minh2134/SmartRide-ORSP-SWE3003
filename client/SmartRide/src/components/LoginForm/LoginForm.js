@@ -9,77 +9,48 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import { connectWebSocket } from '../../services/api';
 import colors from '../../theme/colors';
 import styles from './styles';
 
-const LoginForm = ({ userType, onLogin }) => {
-  const [username, setUsername] = useState(userType === 'customer' ? 'customer' : 'driver');
+const LoginForm = ({ userType, onLogin, isLoading: externalLoading, error: externalError, disabled }) => {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [internalError, setInternalError] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const navigation = useNavigation();
 
+  // Use external state if provided, otherwise use internal state
+  const isLoading = externalLoading !== undefined ? externalLoading : internalLoading;
+  const error = externalError || internalError;
+  const isDisabled = disabled || isLoading;
+
   const handleSubmit = () => {
-    console.log(`Attempting login as ${userType} with username: ${username}`);
-    setIsLoading(true);
-    setError('');
+    if (isDisabled) return;
     
-    // Timeout safety net
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        setIsLoading(false);
-        setError('Connection timeout. Please try again.');
-        Alert.alert('Login Timeout', 'Connection to server timed out. Please check if the server is running.');
-      }
-    }, 15000);
+    console.log(`Submitting login form for ${userType} with username: ${username}`);
     
-    // Connect to WebSocket with authentication
+    // Validate input
+    if (!username.trim()) {
+      setInternalError('Username is required');
+      return;
+    }
+    
+    if (!password.trim()) {
+      setInternalError('Password is required');
+      return;
+    }
+    
+    setInternalError('');
+    setInternalLoading(true);
+    
     try {
-      connectWebSocket(
-        username, 
-        password,
-        // Success callback 
-        (client) => {
-          console.log('Login successful, calling onLogin callback');
-          clearTimeout(timeoutId);
-          setIsLoading(false);
-          
-          // Force navigation even if callback fails
-          try {
-            onLogin(userType, username, client);
-          } catch (err) {
-            console.error('Error in onLogin callback:', err);
-            // Fall back to direct navigation
-            if (userType === 'customer') {
-              navigation.navigate('Customer', { 
-                username,
-                isAuthenticated: true
-              });
-            } else {
-              navigation.navigate('Driver', { 
-                username,
-                isAuthenticated: true
-              });
-            }
-          }
-        },
-        // Error callback
-        (errorMessage) => {
-          console.error('Login error:', errorMessage);
-          clearTimeout(timeoutId);
-          setIsLoading(false);
-          setError(errorMessage || 'Connection failed. Please try again.');
-          Alert.alert('Login Error', errorMessage || 'Connection failed. Please try again.');
-        }
-      );
+      // Call the onLogin handler with username and password
+      onLogin(userType, username, password);
     } catch (err) {
-      console.error('Exception during login:', err);
-      clearTimeout(timeoutId);
-      setIsLoading(false);
-      setError('Error connecting to server');
-      Alert.alert('Connection Error', 'Error connecting to server: ' + err.message);
+      console.error('Error in form submission:', err);
+      setInternalError('An error occurred while processing your request');
+      setInternalLoading(false);
     }
   };
 
@@ -95,35 +66,50 @@ const LoginForm = ({ userType, onLogin }) => {
   return (
     <View style={styles.formContainer}>
       <View style={styles.inputContainer}>
-        <Icon name="user" size={20} color={colors.gray} style={styles.inputIcon} />
+        <Icon name="user" size={20} color={isDisabled ? colors.lightGray : colors.gray} style={styles.inputIcon} />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            isDisabled && styles.disabledInput
+          ]}
           placeholder="Username"
           value={username}
-          onChangeText={setUsername}
+          onChangeText={(text) => {
+            setUsername(text);
+            setInternalError('');
+          }}
           autoCapitalize="none"
-          placeholderTextColor={colors.lightGray}
+          placeholderTextColor={isDisabled ? colors.lightGray : colors.gray}
+          editable={!isDisabled}
         />
       </View>
       
       <View style={styles.inputContainer}>
-        <Icon name="lock" size={20} color={colors.gray} style={styles.inputIcon} />
+        <Icon name="lock" size={20} color={isDisabled ? colors.lightGray : colors.gray} style={styles.inputIcon} />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            isDisabled && styles.disabledInput
+          ]}
           placeholder="Password"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            setInternalError('');
+          }}
           secureTextEntry={!isPasswordVisible}
-          placeholderTextColor={colors.lightGray}
+          placeholderTextColor={isDisabled ? colors.lightGray : colors.gray}
+          editable={!isDisabled}
         />
         <TouchableOpacity 
           onPress={togglePasswordVisibility}
           style={styles.visibilityToggle}
+          disabled={isDisabled}
         >
           <Icon 
             name={isPasswordVisible ? "eye-off" : "eye"} 
             size={20} 
-            color={colors.gray}
+            color={isDisabled ? colors.lightGray : colors.gray}
           />
         </TouchableOpacity>
       </View>
@@ -138,10 +124,10 @@ const LoginForm = ({ userType, onLogin }) => {
       <TouchableOpacity 
         style={[
           styles.loginButton,
-          { backgroundColor: isLoading ? colors.primaryLight : colors.primary }
+          { backgroundColor: isDisabled ? colors.lightGray : colors.primary }
         ]} 
         onPress={handleSubmit}
-        disabled={isLoading}
+        disabled={isDisabled}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" size="small" />
@@ -156,8 +142,9 @@ const LoginForm = ({ userType, onLogin }) => {
       <TouchableOpacity 
         style={{ alignItems: 'center', padding: 12, marginTop: 4 }}
         onPress={handleForgotPassword}
+        disabled={isDisabled}
       >
-        <Text style={{ color: colors.primary, fontSize: 14 }}>Forgot Password?</Text>
+        <Text style={{ color: isDisabled ? colors.lightGray : colors.primary, fontSize: 14 }}>Forgot Password?</Text>
       </TouchableOpacity>
     </View>
   );

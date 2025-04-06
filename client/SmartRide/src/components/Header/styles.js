@@ -22,7 +22,6 @@ export default StyleSheet.create({
     height: 120,
     marginBottom: -20,
     marginLeft: -20
-
   },
   titleContainer: {
     flex: 2,
@@ -33,12 +32,12 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     color: colors.background,
   },
-  themeToggle: {
+  rightButtonContainer: {
     flex: 1,
     alignItems: 'flex-end',
+    paddingRight: 10,
   },
-  themeIcon: {
-    fontSize: 20,
-    color: colors.background,
+  rightButtonPlaceholder: {
+    flex: 1,
   }
 }); 

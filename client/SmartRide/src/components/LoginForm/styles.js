@@ -33,6 +33,10 @@ export default StyleSheet.create({
     color: colors.textDark,
     height: '100%',
   },
+  disabledInput: {
+    color: colors.lightGray,
+    backgroundColor: '#f7f7f7',
+  },
   visibilityToggle: {
     padding: 12,
   },

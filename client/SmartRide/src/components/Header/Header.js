@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Feather';
 import styles from './styles';
 
-const Header = ({ title }) => {
+const Header = ({ title, rightButton }) => {
   const navigation = useNavigation();
 
   // Implement Header Display on each screen
@@ -28,10 +29,16 @@ const Header = ({ title }) => {
         <Text style={styles.title}>{title}</Text>
       </View>
       
-      {/* Light/Dark Mode Toggle - Not implemented yet*/}
-      <TouchableOpacity style={styles.themeToggle}>
-        <Text style={styles.themeIcon}>☀️🌙</Text>
-      </TouchableOpacity>
+      {rightButton ? (
+        <TouchableOpacity 
+          style={styles.rightButtonContainer}
+          onPress={rightButton.onPress}
+        >
+          <Icon name={rightButton.icon} size={20} color="#333" />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.rightButtonPlaceholder} />
+      )}
     </View>
   );
 };
