@@ -12,7 +12,6 @@ public class Response {
 	public Response(int status, String method) {
 		this.status = status;
 		this.method = method;
-		//this.result = result;
 	}
 
 	public Response(int status, String method, UserResponse result) {

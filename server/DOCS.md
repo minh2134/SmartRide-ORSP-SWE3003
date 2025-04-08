@@ -10,13 +10,22 @@ Return the fare rate. Schema:
 
 ## Websocket endpoint
 *Note on authentication*
-You will need to provide Basic HTTP Authentication to use the APIs listed below. Subscribe to `/user/topic/customer/response` to get the response if applicable. Check out the schema in the `Websocket feeds` section.
+You will need to provide `login` and `passcode` headers in your **STOMP CONNECT frame** to use the APIs listed below. Subscribe to `/user/topic/customer/response` to get the response if applicable. Check out the schema in the `Websocket feeds` section.
+
+If user is unauthenticated, or unauthorized, they will still connect to the websocket, however every APIs that needs authentication will response as below:
+```
+{
+    status: 401,
+    method: "the endpoint",
+    result: { "content": "Wrong credentials" }
+}
+```
 
 ### Error response
 If the status code is not 200. The result schema will be as follow:
 ```
 {
-    "content": string   /* Error explanation
+    "content": string   /* Error explanation */
 }
 ```
 

@@ -2,7 +2,7 @@ const stompClient = new StompJs.Client({
     brokerURL: 'ws://localhost:8080/ws',
     connectHeaders: {
         login: "customer",
-        passcode: "customer",
+        passcode: "custo",
     },
 });
 
@@ -51,7 +51,7 @@ function disconnect() {
 
 function sendName() {
     stompClient.publish({
-        destination: "/app/customer/info",
+        destination: "/app/customer/makeride",
         body: JSON.stringify({'pickupLoc': $("#name").val(), 'dropoffLoc': $("#name2").val()})
     });
 }

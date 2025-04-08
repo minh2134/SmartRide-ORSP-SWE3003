@@ -43,7 +43,13 @@ public class CustomerController {
 	@SendToUser("/topic/customer/response")
 	Response userInfo(Principal principal) throws Exception {
 		String method = "/customer/info";
-		SRCustomer customer = customers.get(principal.getName());
+		String username = principal.getName();
+
+		SRCustomer customer = customers.get(username);
+		if (customer == null) {
+			ErrorResponse error = new ErrorResponse("Wrong credentials");
+			return new Response(401, method, error);
+		}
 		
 		UserInfoResponse result = new UserInfoResponse(customer.userInfo);
 		return new Response(200, method, result);
@@ -53,18 +59,22 @@ public class CustomerController {
 	@SendToUser("/topic/customer/response")
 	Response makeRide(Principal principal, @Payload RideRequest rrq) throws Exception {
 		String method = "/customer/makeride";
-		SRCustomer customer = customers.get(principal.getName());
+		String username = principal.getName();
+		
+		SRCustomer customer = customers.get(username);
+		if (customer == null) {
+			ErrorResponse error = new ErrorResponse("Wrong credentials");
+			return new Response(401, method, error);
+		}
+
 		if (!customer.pay(genericPaymentMethod)) {
 			return new Response(401, method, new ErrorResponse("Payment failed"));
 		}
+
 		Ride ride = customer.makeRide(rrq.pickupLoc, rrq.dropoffLoc);
 		
 		MakeRideResponse result = new MakeRideResponse(ride);
 		return new Response(200, method, result);
-	}
-
-	public void rideDone() {
-		System.out.println("Wait this shit actually works?");
 	}
 
 	// TODO: below is test code, implement the real thing later

@@ -15,6 +15,7 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -41,12 +42,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		registry.addEndpoint("/ws").withSockJS(); // SocketJS endpoint
 	}
 
-	//Custom Authentication scheme to deal with browsers bullshit Websocket support
-	//If anyone reading this they should send all their hatred towards Google and
-	//Controlled-Opposition (Mozilla) for funding virtue signalling "operations" instead
-	//of fixing their shitty web browsers.
+	// Custom Authentication scheme to deal with browsers bullshit Websocket support
+	// If anyone reading this they should send all their hatred towards Google and
+	// Controlled-Opposition (Mozilla) for funding virtue signalling "operations" 
+	// instead of fixing their shitty web browsers.
 	@Override
-	public void configureClientInboundChannel(ChannelRegistration registration) {
+	public void configureClientInboundChannel(ChannelRegistration registration) throws AuthenticationException {
 		registration.interceptors(new ChannelInterceptor() {
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -54,15 +55,31 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 					getAccessor(message, StompHeaderAccessor.class);
 				if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 					// Access authentication header(s) 
-					// and invoke accessor.setUser(user)
 					String login = accessor.getLogin();
 					String passcode = accessor.getPasscode();
-					Authentication authentication = 
-						authenticationManager
-						.authenticate(new UsernamePasswordAuthenticationToken(login, passcode));
-					accessor.setUser(authentication);
-						
 
+					// Authenticate the given headers
+					try {
+						Authentication authentication = authenticationManager
+							.authenticate(new UsernamePasswordAuthenticationToken(login, passcode));						
+						
+						// Set the user accordingly
+						accessor.setUser(authentication);
+					}
+					catch (Exception e) {
+						System.out.println("Client done goofed up the credentials. Tried logging in as: " + login);
+						System.out.println("Error:" + e);
+						
+						// set user to DUMMY account
+						login = "DUMMY";
+						passcode = "DUMMY";
+
+						Authentication authentication = authenticationManager
+							.authenticate(new UsernamePasswordAuthenticationToken(login, passcode));
+
+						// Set the user accordingly
+						accessor.setUser(authentication);
+					}
 				}
 				return message;
 			}
