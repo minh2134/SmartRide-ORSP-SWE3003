@@ -59,27 +59,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 					String passcode = accessor.getPasscode();
 
 					// Authenticate the given headers
-					try {
-						Authentication authentication = authenticationManager
-							.authenticate(new UsernamePasswordAuthenticationToken(login, passcode));						
-						
-						// Set the user accordingly
-						accessor.setUser(authentication);
-					}
-					catch (Exception e) {
-						System.out.println("Client done goofed up the credentials. Tried logging in as: " + login);
-						System.out.println("Error:" + e);
-						
-						// set user to DUMMY account
-						login = "DUMMY";
-						passcode = "DUMMY";
+					Authentication authentication = authenticationManager
+						.authenticate(new UsernamePasswordAuthenticationToken(login, passcode));						
+					
+					// Set the user accordingly
+					accessor.setUser(authentication);
 
-						Authentication authentication = authenticationManager
-							.authenticate(new UsernamePasswordAuthenticationToken(login, passcode));
-
-						// Set the user accordingly
-						accessor.setUser(authentication);
-					}
 				}
 				return message;
 			}

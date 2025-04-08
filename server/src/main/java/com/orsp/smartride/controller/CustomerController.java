@@ -47,7 +47,7 @@ public class CustomerController {
 
 		SRCustomer customer = customers.get(username);
 		if (customer == null) {
-			ErrorResponse error = new ErrorResponse("Wrong credentials");
+			ErrorResponse error = new ErrorResponse("Unauthorized");
 			return new Response(401, method, error);
 		}
 		
@@ -68,7 +68,8 @@ public class CustomerController {
 		}
 
 		if (!customer.pay(genericPaymentMethod)) {
-			return new Response(401, method, new ErrorResponse("Payment failed"));
+			ErrorResponse error = new ErrorResponse("Payment failed");
+			return new Response(401, method, error);
 		}
 
 		Ride ride = customer.makeRide(rrq.pickupLoc, rrq.dropoffLoc);
