@@ -21,7 +21,6 @@ import com.orsp.smartride.dataStructures.RideRequest;
 import com.orsp.smartride.dataStructures.userResponse.ErrorResponse;
 import com.orsp.smartride.dataStructures.userResponse.MakeRideResponse;
 import com.orsp.smartride.dataStructures.userResponse.UserInfoResponse;
-import com.orsp.smartride.dataStructures.userResponse.UserResponse;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 import com.orsp.smartride.implementations.payment.GenericPaymentMethod;
 

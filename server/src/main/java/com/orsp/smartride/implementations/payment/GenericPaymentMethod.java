@@ -8,6 +8,6 @@ import com.orsp.smartride.coreLogic.payment.Payment;
 public class GenericPaymentMethod implements Payment {
 	// Mock up class to show *generally* how the system design works
 	public boolean pay() {
-		return false;
+		return true;
 	}
 }
