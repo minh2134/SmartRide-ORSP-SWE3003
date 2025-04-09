@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.RowMapper;
 import com.orsp.smartride.coreLogic.database.Database;
 import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.UserInfo;
+import com.orsp.smartride.implementations.driver.DriverInfo;
 
 public class SRDatabase extends Database {
 	private SRSQLiteStatements sqlStatements;
@@ -30,6 +31,20 @@ public class SRDatabase extends Database {
 			public UserInfo mapRow(ResultSet rs, int rowNum) 
 				throws SQLException {
 				UserInfo userInfo = new UserInfo(rs.getString(1));
+				userInfo.name = rs.getString(2);
+				userInfo.age = rs.getInt(3);
+				userInfo.sex = rs.getString(4);
+				userInfo.phone = rs.getString(5);
+				return userInfo;
+			}
+		});
+	}
+
+	public List<DriverInfo> getDrivers() {
+		return db.query(sqlStatements.getDrivers(), new RowMapper<DriverInfo>() {
+			public DriverInfo mapRow(ResultSet rs, int rowNum) 
+				throws SQLException {
+				DriverInfo userInfo = new DriverInfo(rs.getString(1), rs.getString(6)); // username and license
 				userInfo.name = rs.getString(2);
 				userInfo.age = rs.getInt(3);
 				userInfo.sex = rs.getString(4);

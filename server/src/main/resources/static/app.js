@@ -1,15 +1,15 @@
 const stompClient = new StompJs.Client({
     brokerURL: 'ws://localhost:8080/ws',
     connectHeaders: {
-        login: "customer",
-        passcode: "customer",
+        login: "driver",
+        passcode: "driver",
     },
 });
 
 stompClient.onConnect = (frame) => {
     setConnected(true);
     console.log('Connected: ' + frame);
-    stompClient.subscribe('/user/topic/customer/response', (greeting) => {
+    stompClient.subscribe('/user/topic/driver/response', (greeting) => {
         showUserInfo(greeting.body);
     });
 };
@@ -51,7 +51,7 @@ function disconnect() {
 
 function sendName() {
     stompClient.publish({
-        destination: "/app/customer/makeride",
+        destination: "/app/driver/info",
         body: JSON.stringify({'pickupLoc': $("#name").val(), 'dropoffLoc': $("#name2").val()})
     });
 }

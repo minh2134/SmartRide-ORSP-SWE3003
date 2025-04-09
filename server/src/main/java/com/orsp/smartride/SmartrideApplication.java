@@ -10,10 +10,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.orsp.smartride.coreLogic.driver.Driver;
 import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 import com.orsp.smartride.implementations.database.SRDatabase;
+import com.orsp.smartride.implementations.driver.DriverInfo;
+import com.orsp.smartride.implementations.driver.SRDriver;
 
 
 @SpringBootApplication
@@ -23,8 +24,6 @@ public class SmartrideApplication implements CommandLineRunner {
 
 	private SRDatabase db;
 	
-	private ConcurrentHashMap<String, Driver> drivers;
-
 	public static void main(String[] args) {
 		SpringApplication.run(SmartrideApplication.class, args);
 	}
@@ -42,10 +41,23 @@ public class SmartrideApplication implements CommandLineRunner {
 			customers().put(customer.getUsername(), customer);
 		}
 
+		// Creating driver objects, assigning it to a map
+		List<DriverInfo> driInfo = db.getDrivers();
+
+		for (int i=0; i<driInfo.size(); i++) {
+			SRDriver driver = new SRDriver(driInfo.get(i));
+			drivers().put(driver.getUsername(), driver);
+		}
+
 	}
 
 	@Bean
 	ConcurrentHashMap<String, SRCustomer> customers() {
 		return new ConcurrentHashMap<String, SRCustomer>();
+	}
+
+	@Bean
+	ConcurrentHashMap<String, SRDriver> drivers() {
+		return new ConcurrentHashMap<String, SRDriver>();
 	}
 }

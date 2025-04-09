@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS authorities;
 DROP TABLE IF EXISTS customers;
 DROP TABLE IF EXISTS drivers;
 DROP TABLE IF EXISTS sex;
+DROP TABLE IF EXISTS rides;
 
 CREATE TABLE IF NOT EXISTS sex (
 	name		TEXT PRIMARY KEY
@@ -31,15 +32,26 @@ CREATE TABLE IF NOT EXISTS customers (
 	FOREIGN KEY(sex) REFERENCES sex(name)
 );
 
+
 CREATE TABLE IF NOT EXISTS drivers (
 	username 	TEXT PRIMARY KEY,
 	name 		TEXT,
 	age 		INTEGER NOT NULL,
 	sex 		TEXT,
 	phone 		TEXT,
-	license 	TEXT,
+	license 	TEXT NOT NULL,
 	FOREIGN KEY(username) REFERENCES users(username),
 	FOREIGN KEY(sex) REFERENCES sex(name)
+);
+
+CREATE TABLE IF NOT EXISTS rides(
+	rideID		INTEGER PRIMARY KEY,
+	customer 	TEXT NOT NULL,
+	driver 		TEXT,
+	isDone		INTEGER NOT NULL,
+	timeStamp	INTEGER NOT NULL,
+	FOREIGN KEY(customer) REFERENCES customers(username),
+	FOREIGN KEY(driver) REFERENCES driver(username)
 );
 
 INSERT INTO sex (name) VALUES ('male'), ('female');
