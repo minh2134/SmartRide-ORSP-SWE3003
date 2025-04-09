@@ -11,12 +11,14 @@ import {
   Image,
   FlatList,
   PanResponder,
-  Animated
+  Animated,
+  ActivityIndicator
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import Header from '../../components/Header/Header';
 import Icon from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { makeRideRequest } from '../../services/api';
 import styles from './customerStyles';
 import colors from '../../theme/colors';
 
@@ -155,6 +157,7 @@ const CustomerScreen = () => {
     latitude: 10.762622,
     longitude: 106.660172,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Vehicle options
   const vehicleOptions = [
@@ -256,14 +259,9 @@ const CustomerScreen = () => {
   const handleSendRideRequest = () => {
     // Close modal first
     setModalVisible(false);
+    setIsSubmitting(true);
 
-    // In a real implementation, send to backend:
-    // 1. Pickup location (coordinates + readable address)
-    // 2. Dropoff location (coordinates + readable address)
-    // 3. Vehicle type
-    // 4. Payment method
-    // 5. Estimated fare
-
+    // Create ride request object
     const rideRequest = {
       pickupLoc: pickup,
       dropoffLoc: dropoff,
@@ -272,17 +270,35 @@ const CustomerScreen = () => {
       estimatedFare: fare
     };
 
-    console.log('Ride request to send:', rideRequest);
+    console.log('Sending ride request to backend:', rideRequest);
 
-    // Show confirmation to user
-    Alert.alert(
-      "Ride Requested",
-      "Your ride has been requested. Finding a driver for you...",
-      [{ text: "OK" }]
-    );
-
-    // Reset form after submission
-    resetForm();
+    // Send to backend
+    makeRideRequest(rideRequest)
+      .then(response => {
+        console.log('Ride request success:', response);
+        setIsSubmitting(false);
+        
+        // Show success message
+        Alert.alert(
+          "Ride Requested",
+          "Your ride has been requested. Finding a driver for you...",
+          [{ text: "OK" }]
+        );
+        
+        // Reset form after submission
+        resetForm();
+      })
+      .catch(error => {
+        console.error('Ride request error:', error);
+        setIsSubmitting(false);
+        
+        // Show error message
+        Alert.alert(
+          "Request Failed",
+          error || "Failed to request ride. Please try again.",
+          [{ text: "OK" }]
+        );
+      });
   };
 
   // Reset all form fields
@@ -592,6 +608,14 @@ const CustomerScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Loading overlay when submitting */}
+      {isSubmitting && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Requesting ride...</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };

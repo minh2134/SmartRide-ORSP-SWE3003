@@ -178,11 +178,95 @@ const testServerConnection = () => {
     .catch(error => ({ success: false, error: error.message }));
 };
 
+// Send ride request to backend
+const makeRideRequest = (rideDetails) => {
+  if (!stompClient || !stompClient.connected) {
+    console.error('WebSocket not connected when trying to make ride request');
+    return Promise.reject('WebSocket not connected');
+  }
+
+  return new Promise((resolve, reject) => {
+    // Subscribe to receive response
+    const subscription = stompClient.subscribe('/user/topic/customer/response', (message) => {
+      console.log('Received ride request response:', message);
+      try {
+        const response = JSON.parse(message.body);
+        
+        // Only handle responses for the makeride endpoint
+        if (response.method === '/customer/makeride') {
+          subscription.unsubscribe();
+          
+          if (response.status === 200) {
+            resolve(response.result);
+          } else {
+            reject(response.result?.content || 'Failed to create ride');
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        reject('Error parsing server response');
+      }
+    });
+
+    // Send the ride request
+    console.log('Sending ride request:', rideDetails);
+    stompClient.publish({
+      destination: '/app/customer/makeride',
+      body: JSON.stringify({
+        pickupLoc: rideDetails.pickupLoc,
+        dropoffLoc: rideDetails.dropoffLoc
+        // Backend only expects pickupLoc and dropoffLoc, other details are stored client-side
+      })
+    });
+  });
+};
+
+// Fetch ride history for the current user
+const getRideHistory = () => {
+  if (!stompClient || !stompClient.connected) {
+    console.error('WebSocket not connected when trying to get ride history');
+    return Promise.reject('WebSocket not connected');
+  }
+
+  return new Promise((resolve, reject) => {
+    // Subscribe to receive response
+    const subscription = stompClient.subscribe('/user/topic/customer/response', (message) => {
+      console.log('Received ride history response:', message);
+      try {
+        const response = JSON.parse(message.body);
+        
+        // Only handle responses for the ride history endpoint
+        if (response.method === '/customer/ridehistory') {
+          subscription.unsubscribe();
+          
+          if (response.status === 200) {
+            resolve(response.result);
+          } else {
+            reject(response.result?.content || 'Failed to fetch ride history');
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        reject('Error parsing server response');
+      }
+    });
+
+    // Request ride history
+    console.log('Requesting ride history');
+    stompClient.publish({
+      destination: '/app/customer/ridehistory',
+      body: JSON.stringify({})
+    });
+  });
+};
+
 export {
   api,
   connectWebSocket,
   getUserProfile,
   disconnectWebSocket,
   isAuthenticated,
-  getCurrentUser
+  getCurrentUser,
+  makeRideRequest,
+  getRideHistory
 };
