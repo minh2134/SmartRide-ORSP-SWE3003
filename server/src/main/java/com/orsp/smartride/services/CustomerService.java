@@ -4,13 +4,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.RideRequest;
 import com.orsp.smartride.dataStructures.RideRow;
+import com.orsp.smartride.dataStructures.UnidirectionalMessage;
 import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.events.ride.RideCreationEvent;
+import com.orsp.smartride.events.ride.RideLocationChange;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 import com.orsp.smartride.implementations.database.SRDatabase;
 import com.orsp.smartride.implementations.payment.GenericPaymentMethod;
@@ -28,6 +32,9 @@ public class CustomerService {
 
 	@Autowired
 	private ConcurrentHashMap<String, SRCustomer> customers;
+
+	@Autowired
+	private SimpMessagingTemplate simpmsg;
 
 	@Autowired
 	private GenericPaymentMethod genericPaymentMethod;
@@ -87,4 +94,10 @@ public class CustomerService {
 		return customer.isInARide();
 	}
 	
+	@EventListener
+	public void handleRideLocationChange(RideLocationChange event) {
+
+		UnidirectionalMessage msg = new UnidirectionalMessage("locationChange", event.getLocation());
+		simpmsg.convertAndSendToUser(event.getCustomerUsername(), "/topic/customer/ride/" + event.getRideID(), msg);;
+	}
 }

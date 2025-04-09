@@ -1,12 +1,14 @@
 package com.orsp.smartride.implementations.driver;
 
 import com.orsp.smartride.coreLogic.driver.Driver;
+import com.orsp.smartride.dataStructures.Location;
 
 /**
  * SRDriver
  */
 public class SRDriver extends Driver {
 	public DriverInfo driverInfo;
+	public Location location;
 
 	public SRDriver(String username, String license) {
 		this.driverInfo = new DriverInfo(username, license);
@@ -19,5 +21,4 @@ public class SRDriver extends Driver {
 	public String getUsername() {
 		return driverInfo.getUsername();
 	}
-
 }

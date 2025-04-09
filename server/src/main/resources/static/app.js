@@ -29,7 +29,8 @@ stompClient.onStompError = (frame) => {
 
 function setConnected(connected) {
     $("#connect").prop("disabled", connected);
-    $("#disconnect").prop("disabled", !connected);
+    $("#userDetails").prop("disabled", !connected);
+    $("#cancelRide").prop("disabled", !connected);
     if (connected) {
         $("#conversation").show();
     }
@@ -56,6 +57,18 @@ function sendJSON() {
     });
 }
 
+function reqDetails() {
+    stompClient.publish({
+        destination: "/app/customer/info",
+    });
+}
+
+function cancelRide() {
+    stompClient.publish({
+        destination: "/app/customer/cancelride",
+    });
+}
+
 function showGreeting(message) {
     $("#greetings").append("<tr><td>" + message + "</td></tr>");
 }
@@ -65,4 +78,6 @@ $(function () {
     $( "#connect" ).click(() => connect());
     $( "#disconnect" ).click(() => disconnect());
     $( "#send" ).click(() => sendJSON());
+    $( "#userDetails" ).click(() => reqDetails());
+    $( "#cancelRide" ).click(() => cancelRide());
 });

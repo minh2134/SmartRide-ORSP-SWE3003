@@ -15,5 +15,10 @@ public class Driver{
 	public void cancelRideHelper() {
 		ride = null;
 	}
+
+	public int getRideID() {
+		return ride.getRideID();
+	}
+
 }
 
