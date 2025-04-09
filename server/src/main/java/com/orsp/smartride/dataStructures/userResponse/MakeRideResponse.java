@@ -11,8 +11,7 @@ public class MakeRideResponse extends UserResponse {
 	public MakeRideResponse() {}
 
 	public MakeRideResponse(Ride ride) {
-		
-		this.rideID = "1"; //TODO: implement a ride ID system later
+		this.rideID = ride.getRideID();
 		this.timeStamp = ride.getTimeStamp();
 	}
 	

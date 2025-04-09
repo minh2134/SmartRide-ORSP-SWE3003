@@ -7,11 +7,14 @@ public class Ride {
 	Customer customer;
 	Driver driver;
 
+	private String rideID;
 	private String pickupLoc;
 	private String dropoffLoc;
 	private float fare;
 	private String vehicleType;
 	private long timeStamp;
+
+	private static long nextRideID = 1;
 
 	public Ride(Customer customer, RideInfo rrq) {
 		this.customer = customer;
@@ -20,6 +23,7 @@ public class Ride {
 		this.fare = rrq.getEstimatedFare();
 		this.vehicleType = rrq.getVehicleType();
 		this.timeStamp = System.currentTimeMillis()/1000L;
+		this.rideID = String.valueOf(nextRideID++);
 	}
 
 	public boolean findDriver() {
@@ -63,5 +67,9 @@ public class Ride {
 
 	public long getTimeStamp() {
 		return timeStamp;
+	}
+
+	public String getRideID() {
+		return rideID;
 	}
 }
