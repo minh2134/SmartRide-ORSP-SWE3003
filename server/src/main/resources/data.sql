@@ -14,3 +14,6 @@ INSERT INTO customers (username, name, age, phone, sex) VALUES
 INSERT INTO drivers (username, name, age, phone, sex, license) VALUES
 	('driver', 'Dump', 23, '0908321456', 'male', 'DSCKSAH'),
 	('driverAlt', 'Zelenlandd', 32, '0928222333', 'male', 'UKREINE');
+
+INSERT INTO rides (customer, driver, pickupLoc, dropoffLoc, vehicleType, isDone, timeStamp) VALUES
+	('customer', 'driver', 'default', 'default', 'car', 1, 10000000000);

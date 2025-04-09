@@ -8,7 +8,7 @@ abstract public class Customer {
 	protected Ride ride;
 	
 	public Ride makeRide(RideInfo rideInfo) {
-		if (ride != null) {
+		if (ride == null) {
 			ride = new Ride(this, rideInfo);
 		}
 
