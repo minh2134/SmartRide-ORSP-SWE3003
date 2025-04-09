@@ -4,7 +4,7 @@ import com.orsp.smartride.coreLogic.customer.Customer;
 import com.orsp.smartride.dataStructures.UserInfo;
 
 public class SRCustomer extends Customer {
-	
+
 	public UserInfo userInfo;
 
 	public SRCustomer(String username) {

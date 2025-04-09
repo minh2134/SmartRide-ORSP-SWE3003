@@ -1,13 +1,9 @@
 package com.orsp.smartride.dataStructures;
 
-public class RideRequest {
-	public String dropoffLoc;
-	public String pickupLoc;
+import com.orsp.smartride.coreLogic.ride.RideInfo;
 
+// Implementation for actual ride request
+public class RideRequest extends RideInfo{
+	
 	public RideRequest() {}
-
-	public RideRequest(String dropoffLoc, String pickupLoc) {
-		this.dropoffLoc = dropoffLoc;
-		this.pickupLoc = pickupLoc;
-	}
 }

@@ -11,7 +11,6 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.util.HtmlUtils;
 
 import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.Greetings;
@@ -72,7 +71,7 @@ public class CustomerController {
 			return new Response(401, method, error);
 		}
 
-		Ride ride = customer.makeRide(rrq.pickupLoc, rrq.dropoffLoc);
+		Ride ride = customer.makeRide(rrq);
 		
 		MakeRideResponse result = new MakeRideResponse(ride);
 		return new Response(200, method, result);
@@ -81,7 +80,7 @@ public class CustomerController {
 	// TODO: below is test code, implement the real thing later
 	@MessageMapping("/spechello")
 	public void specGreetings(@Payload HelloMessage message) throws Exception {
-		Greetings out = new Greetings("Hello, " + HtmlUtils.htmlEscape(message.getName() + "!"));
-		simpmsg.convertAndSendToUser("driver", "topic/greetings", out);
+		Greetings out = new Greetings("Hello, " + "World!" + "!");
+		simpmsg.convertAndSendToUser("customer", "topic/customer/response", out);
 	}
 }

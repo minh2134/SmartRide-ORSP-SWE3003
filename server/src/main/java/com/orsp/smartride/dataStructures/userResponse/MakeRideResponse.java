@@ -4,21 +4,23 @@ import com.orsp.smartride.coreLogic.ride.Ride;
 
 public class MakeRideResponse extends UserResponse {
 	
-	String pickupLoc;
-	String dropoffLoc;
+	private String rideID;
+	private long timeStamp;
+
 
 	public MakeRideResponse() {}
 
 	public MakeRideResponse(Ride ride) {
-		this.pickupLoc = ride.getPickupLoc();
-		this.dropoffLoc = ride.getDropoffLoc();
+		
+		this.rideID = "1"; //TODO: implement a ride ID system later
+		this.timeStamp = ride.getTimeStamp();
 	}
 	
-	public String getPickupLoc() {
-		return pickupLoc;
+	public long getTimeStamp() {
+		return timeStamp;
 	}
 
-	public String getDropoffLoc() {
-		return dropoffLoc;
+	public String getRideID() {
+		return rideID;
 	}
 }
