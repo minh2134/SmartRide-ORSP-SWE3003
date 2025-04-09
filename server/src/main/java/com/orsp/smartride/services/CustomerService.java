@@ -49,5 +49,15 @@ public class CustomerService {
 		SRCustomer customer = customers.get(username);
 		return customer.makeRide(rrq);
 	}
+
+	public void cancelRide(String username) {
+		SRCustomer customer = customers.get(username);
+		customer.cancelRide();
+	}
+
+	public boolean isInARide(String username) {
+		SRCustomer customer = customers.get(username);
+		return customer.isInARide();
+	}
 	
 }

@@ -2,7 +2,6 @@ package com.orsp.smartride.coreLogic.ride;
 
 import com.orsp.smartride.coreLogic.customer.Customer;
 import com.orsp.smartride.coreLogic.driver.Driver;
-import com.orsp.smartride.dataStructures.RideRequest;
 
 public class Ride {
 	Customer customer;
@@ -26,6 +25,11 @@ public class Ride {
 	public boolean findDriver() {
 		// TODO: query database, find driver, associate, then return the status
 		return true;
+	}
+
+	public void cancel() {
+		customer.cancelRideHelper();
+		driver.cancelRideHelper();
 	}
 
 	// TODO: returning driver location

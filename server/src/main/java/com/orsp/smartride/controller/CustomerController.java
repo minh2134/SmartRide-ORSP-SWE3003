@@ -71,6 +71,28 @@ public class CustomerController {
 		return new Response(200, method, result);
 	}
 
+	@MessageMapping("/customer/cancelride")
+	@SendToUser("/topic/customer/response")
+	Response cancelRide(Principal principal) throws Exception {
+		String method = "/customer/cancelride";
+		String username = principal.getName();
+
+		if (!cusService.exists(username)) {
+			ErrorResponse error = new ErrorResponse("Unauthorized");
+			return new Response(401, method, error);
+		}
+		
+		if (cusService.isInARide(username)) {
+			cusService.cancelRide(username);
+			return new Response(200, method);
+		}
+		else {
+			ErrorResponse error = new ErrorResponse("Not in a ride");
+			return new Response(400, method, error);
+		}
+
+	}
+
 	// TODO: below is test code, implement the real thing later
 	@MessageMapping("/spechello")
 	public void specGreetings(@Payload HelloMessage message) throws Exception {

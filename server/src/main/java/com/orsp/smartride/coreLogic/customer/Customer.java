@@ -8,7 +8,10 @@ abstract public class Customer {
 	protected Ride ride;
 	
 	public Ride makeRide(RideInfo rideInfo) {
-		ride = new Ride(this, rideInfo);
+		if (ride != null) {
+			ride = new Ride(this, rideInfo);
+		}
+
 		boolean result = ride.findDriver();
 		return ride;
 	}
@@ -20,5 +23,19 @@ abstract public class Customer {
 	public void markRideDone() {
 		ride = null;
 		return;
+	}
+
+	public void cancelRide() {
+		if (ride != null) {
+			ride.cancel();
+		}
+	}
+
+	public void cancelRideHelper() {
+		ride = null;
+	}
+
+	public boolean isInARide() {
+		return ride != null;
 	}
 }
