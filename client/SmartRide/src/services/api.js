@@ -110,19 +110,23 @@ const getUserProfile = (callback, errorCallback) => {
     return;
   }
 
-  console.log('Subscribing to /user/topic/customer/response');
-  // Subscribe to receive user info as per the DOCS.md
-  const subscription = stompClient.subscribe('/user/topic/customer/response', (message) => {
+  // Determine the correct topic based on the current user type
+  const userType = currentUser?.startsWith('driver') ? 'driver' : 'customer';
+  const topic = `/user/topic/${userType}/response`;
+  const destination = `/app/${userType}/info`;
+  
+  console.log(`Subscribing to ${topic}`);
+  // Subscribe to receive user info
+  const subscription = stompClient.subscribe(topic, (message) => {
     console.log('Received message:', message);
     try {
       const response = JSON.parse(message.body);
       console.log('Received response:', response);
       
-      // Check response structure based on API docs
       if (response.status === 200 && response.result) {
         callback(response.result);
         // Only unsubscribe if it's a response to the info request
-        if (response.method === '/customer/info') {
+        if (response.method === `/${userType}/info`) {
           subscription.unsubscribe();
         }
       } else {
@@ -135,10 +139,10 @@ const getUserProfile = (callback, errorCallback) => {
     }
   });
 
-  console.log('Sending request to /app/customer/info');
+  console.log(`Sending request to ${destination}`);
   // Request user info
   stompClient.publish({
-    destination: '/app/customer/info',
+    destination: destination,
     body: JSON.stringify({})
   });
 };
@@ -221,28 +225,28 @@ const makeRideRequest = (rideDetails) => {
   });
 };
 
-// Fetch ride history for the current user
-const getRideHistory = () => {
+// Fetch ride history for the current driver
+const getDriverRideHistory = () => {
   if (!stompClient || !stompClient.connected) {
-    console.error('WebSocket not connected when trying to get ride history');
+    console.error('WebSocket not connected when trying to get driver ride history');
     return Promise.reject('WebSocket not connected');
   }
 
   return new Promise((resolve, reject) => {
     // Subscribe to receive response
-    const subscription = stompClient.subscribe('/user/topic/customer/response', (message) => {
-      console.log('Received ride history response:', message);
+    const subscription = stompClient.subscribe('/user/topic/driver/response', (message) => {
+      console.log('Received driver ride history response:', message);
       try {
         const response = JSON.parse(message.body);
         
-        // Only handle responses for the ride history endpoint
-        if (response.method === '/customer/ridehistory') {
+        // Only handle responses for the driver ride history endpoint
+        if (response.method === '/driver/ridehistory') {
           subscription.unsubscribe();
           
           if (response.status === 200) {
             resolve(response.result);
           } else {
-            reject(response.result?.content || 'Failed to fetch ride history');
+            reject(response.result?.content || 'Failed to fetch driver ride history');
           }
         }
       } catch (e) {
@@ -252,12 +256,59 @@ const getRideHistory = () => {
     });
 
     // Request ride history
-    console.log('Requesting ride history');
+    console.log('Requesting driver ride history');
     stompClient.publish({
-      destination: '/app/customer/ridehistory',
+      destination: '/app/driver/ridehistory',
       body: JSON.stringify({})
     });
   });
+};
+
+// Fetch ride history (works for both customer and driver)
+const getRideHistory = () => {
+  // Determine user type and call appropriate function
+  const isDriver = currentUser?.startsWith('driver');
+  
+  if (isDriver) {
+    return getDriverRideHistory();
+  } else {
+    // Original function for customer
+    if (!stompClient || !stompClient.connected) {
+      console.error('WebSocket not connected when trying to get ride history');
+      return Promise.reject('WebSocket not connected');
+    }
+
+    return new Promise((resolve, reject) => {
+      // Subscribe to receive response
+      const subscription = stompClient.subscribe('/user/topic/customer/response', (message) => {
+        console.log('Received ride history response:', message);
+        try {
+          const response = JSON.parse(message.body);
+          
+          // Only handle responses for the ride history endpoint
+          if (response.method === '/customer/ridehistory') {
+            subscription.unsubscribe();
+            
+            if (response.status === 200) {
+              resolve(response.result);
+            } else {
+              reject(response.result?.content || 'Failed to fetch ride history');
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing response:', e);
+          reject('Error parsing server response');
+        }
+      });
+
+      // Request ride history
+      console.log('Requesting ride history');
+      stompClient.publish({
+        destination: '/app/customer/ridehistory',
+        body: JSON.stringify({})
+      });
+    });
+  }
 };
 
 export {
@@ -268,5 +319,6 @@ export {
   isAuthenticated,
   getCurrentUser,
   makeRideRequest,
-  getRideHistory
+  getRideHistory,
+  getDriverRideHistory
 };
