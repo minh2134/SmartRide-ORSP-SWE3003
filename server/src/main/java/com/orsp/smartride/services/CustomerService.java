@@ -60,7 +60,8 @@ public class CustomerService {
 		SRCustomer customer = customers.get(username);
 		RideRow rr = new RideRow(customer.getUsername(), rrq);
 		int rideID = -1;
-		if (!customer.isInARide()) {
+		boolean wasInARide = customer.isInARide();
+		if (!wasInARide) {
 			rideID = db.insertRide(rr);
 			System.out.println(rideID + "<- this is the new ride ID");
 		}
@@ -68,8 +69,10 @@ public class CustomerService {
 		Ride ride =  customer.makeRide(rrq, rideID, rr.timeStamp);
 		
 		// publish the event so that the RideService can handle it
-		RideCreationEvent event = new RideCreationEvent(this, ride);
-		applicationEventPublisher.publishEvent(event);
+		if (!wasInARide) {
+			RideCreationEvent event = new RideCreationEvent(this, ride);
+			applicationEventPublisher.publishEvent(event);
+		}
 
 		return ride;
 	}
