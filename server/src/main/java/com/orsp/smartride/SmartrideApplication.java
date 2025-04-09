@@ -8,7 +8,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.implementations.customer.SRCustomer;
@@ -19,9 +18,8 @@ import com.orsp.smartride.implementations.driver.SRDriver;
 
 @SpringBootApplication
 public class SmartrideApplication implements CommandLineRunner {
-	@Autowired
-	private JdbcTemplate jdbc;
 
+	@Autowired
 	private SRDatabase db;
 	
 	public static void main(String[] args) {
@@ -30,8 +28,6 @@ public class SmartrideApplication implements CommandLineRunner {
 	
 	@Override
 	public void run(String... strings) throws Exception {
-		// Initialize the db
-		this.db = new SRDatabase(jdbc);
 
 		// Creating customer objects, assigning it to a map
 		List<UserInfo> cusInfo = db.getCustomers();

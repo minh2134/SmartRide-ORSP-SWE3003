@@ -5,14 +5,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
 
 import com.orsp.smartride.coreLogic.database.Database;
 import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.implementations.driver.DriverInfo;
 
+@Component
 public class SRDatabase extends Database {
 	private SRSQLiteStatements sqlStatements;
 	
