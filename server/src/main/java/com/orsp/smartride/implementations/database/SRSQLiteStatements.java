@@ -5,10 +5,17 @@ package com.orsp.smartride.implementations.database;
 class SRSQLiteStatements {
 	private String customers;
 	private String drivers;
+	private String maxRideID;
+	private String insertRide;
+	private String lastInsertRowID;
 
 	public SRSQLiteStatements() {
 		customers = "SELECT * FROM customers;";
 		drivers = "SELECT * FROM drivers;";
+		maxRideID = "SELECT MAX(rideID) FROM rides;";
+		insertRide = "INSERT INTO rides (customer, driver, pickupLoc, dropoffLoc, vehicleType, timeStamp) VALUES (?, ?, ?, ?, ?, ?);";
+		lastInsertRowID = "SELECT last_insert_rowid();";
+
 	}
 
 	public String getCustomers() {
@@ -17,5 +24,17 @@ class SRSQLiteStatements {
 
 	public String getDrivers() {
 		return drivers;
+	}
+
+	public String getMaxRideID() {
+		return maxRideID;
+	}
+
+	public String getInsertRide() {
+		return insertRide;
+	}
+
+	public String getLastInsertRowID() {
+		return lastInsertRowID;
 	}
 }

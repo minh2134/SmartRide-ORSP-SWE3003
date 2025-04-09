@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS rides(
 	pickupLoc	TEXT,
 	dropoffLoc	TEXT,
 	vehicleType	TEXT,
-	isDone		INTEGER NOT NULL,
+	isDone		INTEGER NOT NULL DEFAULT 0,
 	timeStamp	INTEGER NOT NULL,
 	FOREIGN KEY(customer) REFERENCES customers(username),
 	FOREIGN KEY(driver) REFERENCES driver(username)

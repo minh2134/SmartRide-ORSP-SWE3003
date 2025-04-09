@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import com.orsp.smartride.coreLogic.database.Database;
 import com.orsp.smartride.coreLogic.ride.Ride;
+import com.orsp.smartride.dataStructures.RideRow;
 import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.implementations.driver.DriverInfo;
 
@@ -56,8 +57,19 @@ public class SRDatabase extends Database {
 			}
 		});
 	}
+	
+	public int insertRide(RideRow rr) {
+		// return rideID
+		
+		db.update(sqlStatements.getInsertRide(), rr.customer, rr.driver, rr.pickupLoc, rr.dropoffLoc, rr.vehicleType, rr.timeStamp);
 
-	public boolean updateRide(Ride ride) {
-		return true;
+		List<Integer> result = db.query(sqlStatements.getLastInsertRowID(), new RowMapper<Integer>() {
+			public Integer mapRow(ResultSet rs, int rowNum)
+				throws SQLException {
+				return rs.getInt(1);
+			}
+		});
+		
+		return result.get(0);
 	}
 }

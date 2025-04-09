@@ -7,9 +7,9 @@ import com.orsp.smartride.coreLogic.ride.Ride;
 abstract public class Customer {
 	protected Ride ride;
 	
-	public Ride makeRide(RideInfo rideInfo) {
+	public Ride makeRide(RideInfo rideInfo, int rideID, long timeStamp) {
 		if (ride == null) {
-			ride = new Ride(this, rideInfo);
+			ride = new Ride(this, rideInfo, rideID, timeStamp);
 		}
 
 		boolean result = ride.findDriver();

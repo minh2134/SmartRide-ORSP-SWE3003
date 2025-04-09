@@ -4,7 +4,7 @@ import com.orsp.smartride.coreLogic.ride.Ride;
 
 public class MakeRideResponse extends UserResponse {
 	
-	private String rideID;
+	private int rideID;
 	private long timeStamp;
 
 
@@ -19,7 +19,7 @@ public class MakeRideResponse extends UserResponse {
 		return timeStamp;
 	}
 
-	public String getRideID() {
+	public int getRideID() {
 		return rideID;
 	}
 }

@@ -9,5 +9,5 @@ abstract public class Database {
 	protected JdbcTemplate db;
 
 	abstract public boolean init();
-	abstract public boolean updateRide(Ride ride);
+	//abstract public boolean insertRide(Ride ride);
 }
