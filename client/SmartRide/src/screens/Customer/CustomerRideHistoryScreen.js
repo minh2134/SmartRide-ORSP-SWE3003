@@ -80,6 +80,15 @@ const CustomerRideHistoryScreen = () => {
           </View>
         </View>
         
+        {item.driver && (
+          <View style={historyStyles.driverInfo}>
+            <Icon name="user" size={16} color={colors.primary} />
+            <Text style={historyStyles.driverName}>
+              Driver: {item.driver}
+            </Text>
+          </View>
+        )}
+        
         <View style={historyStyles.rideRoute}>
           <View style={historyStyles.locationContainer}>
             <Icon name="map-pin" size={16} color={colors.primary} />
@@ -122,7 +131,13 @@ const CustomerRideHistoryScreen = () => {
             
             <TouchableOpacity 
               style={historyStyles.actionButton}
-              onPress={() => Alert.alert('Receipt', `Ride ID: ${item.id}\nTotal Fare: ${item.fare.toLocaleString()} VND`)}
+              onPress={() => Alert.alert('Receipt', 
+                `Ride ID: ${item.id}\n` +
+                `Date: ${item.date}\n` +
+                `Status: ${item.status}\n` +
+                `Driver: ${item.driver || 'Not assigned'}\n` +
+                `Total Fare: ${item.fare.toLocaleString()} VND`
+              )}
             >
               <Icon name="file-text" size={16} color={colors.primary} />
               <Text style={historyStyles.actionButtonText}>View Receipt</Text>

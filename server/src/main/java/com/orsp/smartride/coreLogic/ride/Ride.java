@@ -29,7 +29,9 @@ public class Ride {
 
 	public void cancel() {
 		customer.cancelRideHelper();
-		driver.cancelRideHelper();
+		if (driver != null) {
+			driver.cancelRideHelper();
+		}
 	}
 
 	// TODO: returning driver location

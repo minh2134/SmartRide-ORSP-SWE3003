@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -18,7 +18,17 @@ import { useRoute } from '@react-navigation/native';
 import Header from '../../components/Header/Header';
 import Icon from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { makeRideRequest } from '../../services/api';
+import { 
+  makeRideRequest, 
+  hasActiveRideRequest, 
+  getActiveRideRequest, 
+  cancelRideRequest, 
+  clearActiveRideRequest, 
+  getCurrentUser, 
+  isAuthenticated,
+  subscribeToRideUpdates,
+  unsubscribeFromRideUpdates
+} from '../../services/api';
 import styles from './customerStyles';
 import colors from '../../theme/colors';
 
@@ -135,7 +145,7 @@ const SimpleMap = ({ initialRegion, onLocationSelect, markerPosition, setMarkerP
 // The main activity screen for the customer
 const CustomerScreen = () => {
   const route = useRoute();
-  const { username, isAuthenticated } = route.params || {};
+  const { username, isAuthenticated: routeIsAuthenticated } = route.params || {};
 
   // State variables for ride information
   const [pickup, setPickup] = useState('');
@@ -148,16 +158,18 @@ const CustomerScreen = () => {
   const [mapType, setMapType] = useState(''); // 'pickup' or 'dropoff'
   const [showPaymentDropdown, setShowPaymentDropdown] = useState(false);
   const [mapRegion] = useState({
-    latitude: 10.762622,
-    longitude: 106.660172,
+    latitude: 10,
+    longitude: 100,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
   const [markerPosition, setMarkerPosition] = useState({
-    latitude: 10.762622,
-    longitude: 106.660172,
+    latitude: 10.5,
+    longitude: 105,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // New state for active ride
+  const [activeRide, setActiveRide] = useState(null);
 
   // Vehicle options
   const vehicleOptions = [
@@ -173,6 +185,23 @@ const CustomerScreen = () => {
     { id: 'debit', name: 'Debit Card', icon: 'credit-card' },
     { id: 'cash', name: 'Cash', icon: 'money' },
   ];
+
+  // Define ride status update callback
+  const handleRideStatusUpdate = useCallback((rideData) => {
+    console.log('Ride status update received:', rideData);
+    setActiveRide(rideData);
+  }, []);
+
+  // Subscribe to ride updates on mount
+  useEffect(() => {
+    // Subscribe to ride status updates
+    subscribeToRideUpdates(handleRideStatusUpdate);
+    
+    // Cleanup on unmount
+    return () => {
+      unsubscribeFromRideUpdates(handleRideStatusUpdate);
+    };
+  }, [handleRideStatusUpdate]);
 
   // Calculate fare when pickup, dropoff, or vehicleType changes
   useEffect(() => {
@@ -257,17 +286,39 @@ const CustomerScreen = () => {
 
   // Handle sending ride request to backend
   const handleSendRideRequest = () => {
+    // Check if customer already has an active ride
+    if (hasActiveRideRequest()) {
+      Alert.alert(
+        "Cannot Request Ride",
+        "You already have an active ride request. Please cancel or complete it before requesting another.",
+        [{ text: "OK" }]
+      );
+      setModalVisible(false);
+      return;
+    }
+
+    // Verify user is authenticated
+    if (!isAuthenticated()) {
+      Alert.alert(
+        "Authentication Error",
+        "Your session has expired. Please log in again to request a ride.",
+        [{ text: "OK" }]
+      );
+      setModalVisible(false);
+      return;
+    }
+
     // Close modal first
     setModalVisible(false);
     setIsSubmitting(true);
 
-    // Create ride request object
+    // Create ride request object that matches RideInfo expected by server
     const rideRequest = {
       pickupLoc: pickup,
       dropoffLoc: dropoff,
       vehicleType: vehicleType,
-      paymentMethod: paymentMethod,
       estimatedFare: fare
+      // The server will create the timestamp and manage isDone status
     };
 
     console.log('Sending ride request to backend:', rideRequest);
@@ -277,6 +328,11 @@ const CustomerScreen = () => {
       .then(response => {
         console.log('Ride request success:', response);
         setIsSubmitting(false);
+        
+        // Get and set the active ride state
+        if (hasActiveRideRequest()) {
+          setActiveRide(getActiveRideRequest());
+        }
         
         // Show success message
         Alert.alert(
@@ -292,10 +348,21 @@ const CustomerScreen = () => {
         console.error('Ride request error:', error);
         setIsSubmitting(false);
         
+        // Handle specific error cases
+        let errorMessage = error;
+        
+        if (typeof error === 'string' && error.includes('timeout')) {
+          errorMessage = "The server is taking too long to respond. Please check your connection and try again.";
+        } else if (typeof error === 'string' && error.includes('Payment failed')) {
+          errorMessage = "Payment failed. Please check your payment method and try again.";
+        } else if (!isAuthenticated()) {
+          errorMessage = "Your session has expired. Please log in again.";
+        }
+        
         // Show error message
         Alert.alert(
           "Request Failed",
-          error || "Failed to request ride. Please try again.",
+          errorMessage || "Failed to request ride. Please try again.",
           [{ text: "OK" }]
         );
       });
@@ -406,90 +473,289 @@ const CustomerScreen = () => {
     }
   };
 
+  // Function to handle ride cancellation
+  const handleCancelRide = () => {
+    Alert.alert(
+      "Cancel Ride",
+      "Are you sure you want to cancel your current ride request?",
+      [
+        { 
+          text: "No", 
+          style: "cancel" 
+        },
+        { 
+          text: "Yes", 
+          onPress: () => {
+            setIsSubmitting(true);
+            
+            // Check if the active ride belongs to current user
+            const currentUsername = getCurrentUser();
+            if (!currentUsername) {
+              // User may have logged out and back in, handle gracefully
+              setActiveRide(null);
+              clearActiveRideRequest(); // Clear any stale requests
+              setIsSubmitting(false);
+              Alert.alert("Ride Cancelled", "Your ride request has been reset.");
+              return;
+            }
+            
+            // Send cancellation request
+            cancelRideRequest()
+              .then(() => {
+                setActiveRide(null);
+                Alert.alert("Ride Cancelled", "Your ride request has been cancelled successfully.");
+                setIsSubmitting(false);
+              })
+              .catch(error => {
+                console.error('Cancel ride error:', error);
+                setIsSubmitting(false);
+                
+                // Handle specific error cases
+                if (typeof error === 'string' && error.includes('timeout')) {
+                  // Handle the known server bug with driver being null during cancellation
+                  setActiveRide(null);
+                  clearActiveRideRequest();
+                  Alert.alert(
+                    "Ride Cancelled Locally",
+                    "The server did not respond (likely due to a known server bug), but your ride has been cleared locally.",
+                    [{ text: "OK" }]
+                  );
+                } else if (typeof error === 'string' && error.includes('Not in a ride')) {
+                  // The server reported that there is no active ride for this user
+                  setActiveRide(null);
+                  clearActiveRideRequest();
+                  Alert.alert("No Active Ride", "You don't currently have an active ride to cancel.");
+                } else {
+                  // For other errors, give option to clear locally
+                  Alert.alert(
+                    "Cancel Ride Error",
+                    "Failed to cancel ride on server. Would you like to clear it locally?",
+                    [
+                      {
+                        text: "No",
+                        style: "cancel"
+                      },
+                      {
+                        text: "Yes",
+                        onPress: () => {
+                          setActiveRide(null);
+                          clearActiveRideRequest();
+                          Alert.alert("Ride Cleared", "Your ride request has been cleared locally.");
+                        }
+                      }
+                    ]
+                  );
+                }
+              });
+          } 
+        }
+      ]
+    );
+  };
+
+  // Render the active ride card
+  const renderActiveRideCard = () => {
+    if (!activeRide) return null;
+
+    // Determine ride status display text
+    let statusText = 'Finding Driver';
+    let statusColor = '#FF9900';
+    let statusBgColor = '#FFF7E6';
+    let statusBorderColor = '#FFD166';
+    
+    if (activeRide.driver) {
+      if (activeRide.status === 'in_progress' || activeRide.status === 'accepted') {
+        statusText = 'In Progress';
+        statusColor = '#00AA55';
+        statusBgColor = '#E6FFF0';
+        statusBorderColor = '#99EEBB';
+      }
+    }
+
+    return (
+      <View style={styles.activeRideCard}>
+        <View style={styles.activeRideHeader}>
+          <Text style={styles.activeRideTitle}>Active Ride</Text>
+          <View style={[
+            styles.activeRideStatus, 
+            { 
+              backgroundColor: statusBgColor,
+              borderColor: statusBorderColor 
+            }
+          ]}>
+            <Text style={[styles.activeRideStatusText, { color: statusColor }]}>
+              {statusText}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.activeRideDetails}>
+          <View style={styles.activeRideItem}>
+            <Icon name="map-pin" size={18} color={colors.primary} />
+            <Text style={styles.activeRideItemText}>{activeRide.pickupLoc}</Text>
+          </View>
+          
+          <View style={styles.activeRideItem}>
+            <Icon name="flag" size={18} color="red" />
+            <Text style={styles.activeRideItemText}>{activeRide.dropoffLoc}</Text>
+          </View>
+          
+          <View style={styles.activeRideItem}>
+            <Icon name="truck" size={18} color={colors.text} />
+            <Text style={styles.activeRideItemText}>
+              {vehicleOptions.find(v => v.id === activeRide.vehicleType)?.name || activeRide.vehicleType}
+            </Text>
+          </View>
+          
+          <View style={styles.activeRideItem}>
+            <Icon name="credit-card" size={18} color={colors.text} />
+            <Text style={styles.activeRideItemText}>
+              {paymentMethods.find(p => p.id === activeRide.paymentMethod)?.name || activeRide.paymentMethod}
+            </Text>
+          </View>
+          
+          {activeRide.driver && (
+            <View style={styles.activeRideDriverSection}>
+              <Text style={styles.activeRideDriverTitle}>Driver Information</Text>
+              
+              <View style={styles.activeRideItem}>
+                <Icon name="user" size={18} color={colors.primary} />
+                <Text style={styles.activeRideItemText}>
+                  {activeRide.driver.name || activeRide.driver}
+                </Text>
+              </View>
+              
+              {activeRide.driver.phone && (
+                <View style={styles.activeRideItem}>
+                  <Icon name="phone" size={18} color={colors.primary} />
+                  <Text style={styles.activeRideItemText}>
+                    {activeRide.driver.phone}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+          
+          <View style={styles.activeRidePrice}>
+            <Text style={styles.activeRidePriceLabel}>Fare:</Text>
+            <Text style={styles.activeRidePriceValue}>
+              {activeRide.estimatedFare?.toLocaleString() || '0'} VND
+            </Text>
+          </View>
+        </View>
+        
+        {/* Only show cancel button if ride is still in "finding driver" state */}
+        {(!activeRide.driver || activeRide.status === 'pending') && (
+          <TouchableOpacity 
+            style={styles.cancelRideButton}
+            onPress={handleCancelRide}
+          >
+            <Text style={styles.cancelRideButtonText}>Cancel Ride</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Book a Ride" />
       
       <ScrollView style={styles.content}>
-        {/* Pickup Location */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pickup Location</Text>
-          <View style={styles.locationInputContainer}>
-            <View style={styles.locationIconContainer}>
-              <Icon name="map-pin" size={20} color={colors.primary} />
+        {/* Active Ride Card (if there is an active ride) */}
+        {renderActiveRideCard()}
+
+        {/* Booking Form (hidden if there is an active ride) */}
+        {!activeRide ? (
+          <>
+            {/* Pickup Location */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Pickup Location</Text>
+              <View style={styles.locationInputContainer}>
+                <View style={styles.locationIconContainer}>
+                  <Icon name="map-pin" size={20} color={colors.primary} />
+                </View>
+                <TextInput
+                  style={styles.locationInput}
+                  placeholder="Enter pickup location"
+                  value={pickup}
+                  onChangeText={setPickup}
+                />
+                <TouchableOpacity 
+                  style={styles.locationAction}
+                  onPress={handleUseCurrentLocation}
+                >
+                  <Text style={styles.currentLocationText}>C</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.locationAction}
+                  onPress={handlePickupMapSelection}
+                >
+                  <Icon name="map" size={20} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <TextInput
-              style={styles.locationInput}
-              placeholder="Enter pickup location"
-              value={pickup}
-              onChangeText={setPickup}
-            />
-            <TouchableOpacity 
-              style={styles.locationAction}
-              onPress={handleUseCurrentLocation}
-            >
-              <Text style={styles.currentLocationText}>C</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.locationAction}
-              onPress={handlePickupMapSelection}
-            >
-              <Icon name="map" size={20} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        {/* Dropoff Location */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dropoff Location</Text>
-          <View style={styles.locationInputContainer}>
-            <View style={styles.locationIconContainer}>
-              <Icon name="flag" size={20} color="red" />
+            {/* Dropoff Location */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Dropoff Location</Text>
+              <View style={styles.locationInputContainer}>
+                <View style={styles.locationIconContainer}>
+                  <Icon name="flag" size={20} color="red" />
+                </View>
+                <TextInput
+                  style={styles.locationInput}
+                  placeholder="Enter destination"
+                  value={dropoff}
+                  onChangeText={setDropoff}
+                />
+                <TouchableOpacity 
+                  style={styles.locationAction}
+                  onPress={handleDropoffMapSelection}
+                >
+                  <Icon name="map" size={20} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <TextInput
-              style={styles.locationInput}
-              placeholder="Enter destination"
-              value={dropoff}
-              onChangeText={setDropoff}
-            />
+
+            {/* Vehicle Selection */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Vehicle Type</Text>
+              <View style={styles.vehicleOptionsContainer}>
+                {vehicleOptions.map(renderVehicleOption)}
+              </View>
+            </View>
+
+            {/* Payment Method Dropdown */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Payment Method</Text>
+              {renderPaymentSelector()}
+            </View>
+
+            {/* Fare Estimate */}
+            {fare > 0 && (
+              <View style={styles.fareContainer}>
+                <Text style={styles.fareLabel}>Estimated Fare:</Text>
+                <Text style={styles.fareAmount}>{fare.toLocaleString()} VND</Text>
+              </View>
+            )}
+
+            {/* Confirm Button */}
             <TouchableOpacity 
-              style={styles.locationAction}
-              onPress={handleDropoffMapSelection}
+              style={styles.confirmButton}
+              onPress={handleConfirmRide}
             >
-              <Icon name="map" size={20} color={colors.primary} />
+              <Text style={styles.confirmButtonText}>Confirm Ride</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Vehicle Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Vehicle Type</Text>
-          <View style={styles.vehicleOptionsContainer}>
-            {vehicleOptions.map(renderVehicleOption)}
-          </View>
-        </View>
-
-        {/* Payment Method Dropdown */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Method</Text>
-          {renderPaymentSelector()}
-        </View>
-
-        {/* Fare Estimate */}
-        {fare > 0 && (
-          <View style={styles.fareContainer}>
-            <Text style={styles.fareLabel}>Estimated Fare:</Text>
-            <Text style={styles.fareAmount}>{fare.toLocaleString()} VND</Text>
+          </>
+        ) : (
+          // Display a message when there's an active ride
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoText}>
+              You have an active ride. You can request a new ride after your current ride is completed or cancelled.
+            </Text>
           </View>
         )}
-
-        {/* Confirm Button */}
-        <TouchableOpacity 
-          style={styles.confirmButton}
-          onPress={handleConfirmRide}
-        >
-          <Text style={styles.confirmButtonText}>Confirm Ride</Text>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* Map Selection Modal */}

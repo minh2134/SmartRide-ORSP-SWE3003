@@ -164,4 +164,18 @@ export default StyleSheet.create({
     color: colors.error,
     textAlign: 'center',
   },
+  driverInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGray,
+  },
+  driverName: {
+    marginLeft: 8,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '500',
+  },
 }); 

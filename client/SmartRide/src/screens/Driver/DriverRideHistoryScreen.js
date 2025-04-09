@@ -82,7 +82,7 @@ const DriverRideHistoryScreen = () => {
         <View style={driverHistoryStyles.customerInfo}>
           <Icon name="user" size={16} color={colors.primary} />
           <Text style={driverHistoryStyles.customerName}>
-            {item.customerName || 'Customer'}
+            {item.customer || 'Unknown Customer'}
           </Text>
         </View>
         
@@ -120,7 +120,13 @@ const DriverRideHistoryScreen = () => {
           <View style={driverHistoryStyles.expandedSection}>
             <TouchableOpacity 
               style={driverHistoryStyles.actionButton}
-              onPress={() => Alert.alert('Details', `Ride ID: ${item.id}\nCustomer: ${item.customerName || 'Unknown'}\nDate: ${item.date}\nEarnings: ${item.fare.toLocaleString()} VND`)}
+              onPress={() => Alert.alert('Ride Details', 
+                `Ride ID: ${item.id}\n` +
+                `Customer: ${item.customer || 'Unknown'}\n` +
+                `Date: ${item.date}\n` +
+                `Status: ${item.status}\n` +
+                `Earnings: ${item.fare.toLocaleString()} VND`
+              )}
             >
               <Icon name="info" size={16} color={colors.primary} />
               <Text style={driverHistoryStyles.actionButtonText}>Details</Text>
