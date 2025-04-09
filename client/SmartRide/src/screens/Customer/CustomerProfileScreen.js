@@ -45,6 +45,9 @@ const CustomerProfileScreen = () => {
         });
       }
       setIsLoading(false);
+    }, (errorMsg) => {
+      setError(errorMsg || 'Failed to load profile');
+      setIsLoading(false);
     });
     
     // Handle timeout

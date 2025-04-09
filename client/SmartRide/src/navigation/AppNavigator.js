@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import LoginScreen from '../screens/Login/LoginScreen';
 import CustomerScreen from '../screens/Customer/CustomerScreen';
 import CustomerProfileScreen from '../screens/Customer/CustomerProfileScreen';
+import CustomerRideHistoryScreen from '../screens/Customer/CustomerRideHistoryScreen';
 import DriverScreen from '../screens/Driver/DriverScreen';
 import NotFoundScreen from '../screens/404/404Screen';
 import colors from '../theme/colors';
@@ -32,6 +33,17 @@ const CustomerTabs = ({ route }) => {
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => (
             <Icon name="home" color={color} size={size} />
+          ),
+        }}
+        initialParams={{ username, isAuthenticated }}
+      />
+      <Tab.Screen
+        name="CustomerRideHistory"
+        component={CustomerRideHistoryScreen}
+        options={{
+          tabBarLabel: 'Rides',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="clock" color={color} size={size} />
           ),
         }}
         initialParams={{ username, isAuthenticated }}

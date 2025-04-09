@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { testWebSocketConnection } from './src/utils/webSocketUtils';
+import * as encoding from "text-encoding";
 
 const App = () => {
   useEffect(() => {

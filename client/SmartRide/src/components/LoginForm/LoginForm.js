@@ -14,7 +14,7 @@ import colors from '../../theme/colors';
 import styles from './styles';
 
 const LoginForm = ({ userType, onLogin }) => {
-  const [username, setUsername] = useState(userType === 'customer' ? 'customer' : 'driver');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -98,7 +98,7 @@ const LoginForm = ({ userType, onLogin }) => {
         <Icon name="user" size={20} color={colors.gray} style={styles.inputIcon} />
         <TextInput
           style={styles.input}
-          placeholder="Username"
+          placeholder={userType === 'customer' ? "Customer Username" : "Driver Username"}
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"

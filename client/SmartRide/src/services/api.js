@@ -4,10 +4,11 @@ import { Client } from '@stomp/stompjs';
 
 // Use 10.0.2.2 to access localhost from Android emulator
 const BASE_URL = 'http://10.0.2.2:8080';
-const WS_URL = `${BASE_URL}/ws`
+const WS_URL = 'ws://10.0.2.2:8080/ws';
 
 // Simple token storage (in-memory only)
 let authToken = null;
+let currentUser = null;
 
 // Create axios instance with auth interceptors
 const api = axios.create({
@@ -25,44 +26,39 @@ api.interceptors.request.use((config) => {
 // WebSocket client
 let stompClient = null;
 
-// Add this flag
-const USE_SOCKJS = false; // Set to false to use direct WebSocket
-
 // Connect to WebSocket with authentication
 const connectWebSocket = (username, password, onConnect, onError) => {
   console.log(`Connecting to WebSocket at ${WS_URL} with user ${username}`);
   
-  // Basic auth token
+  // Store user info
+  currentUser = username;
+  
+  // Create basic auth token for REST calls
   authToken = btoa(`${username}:${password}`);
   
   // Create STOMP client
   const client = new Client({
     webSocketFactory: () => {
-      if (USE_SOCKJS) {
-        console.log('Creating SockJS instance');
-        const sockjs = new SockJS(WS_URL);
-        sockjs.onopen = () => console.log('SockJS socket opened');
-        sockjs.onclose = (e) => console.log('SockJS socket closed', e);
-        sockjs.onerror = (e) => console.error('SockJS socket error', e);
-        return sockjs;
-      } else {
-        // Try direct WebSocket connection instead
-        console.log('Creating direct WebSocket connection');
-        // Note: using ws:// protocol instead of http://
-        const socket = new WebSocket('ws://10.0.2.2:8080/ws');
-        socket.onopen = () => console.log('WebSocket opened directly');
-        socket.onclose = (e) => console.log('WebSocket closed', e);
-        socket.onerror = (e) => console.error('WebSocket error', e);
-        return socket;
-      }
+      console.log('Creating direct WebSocket connection');
+      const socket = new WebSocket(WS_URL);
+      socket.onopen = () => console.log('WebSocket opened directly');
+      socket.onclose = (e) => console.log('WebSocket closed', e);
+      socket.onerror = (e) => console.error('WebSocket error', e);
+      return socket;
     },
+    // Use login/passcode headers as expected by the server
     connectHeaders: {
-      'Authorization': 'Basic ' + authToken
+      login: username,
+      passcode: password
     },
     debug: (str) => {
       console.log('STOMP: ' + str);
     },
-    reconnectDelay: 5000,
+    // No reconnection
+    reconnectDelay: 0,
+    // React Native workarounds from StompJS docs
+    forceBinaryWSFrames: true,
+    appendMissingNULLonIncoming: true
   });
 
   // Set a connection timeout
@@ -114,27 +110,47 @@ const getUserProfile = (callback, errorCallback) => {
     return;
   }
 
-  console.log('Subscribing to /user/topic/info');
-  // Subscribe to receive user info
-  const subscription = stompClient.subscribe('/user/topic/info', (message) => {
+  console.log('Subscribing to /user/topic/customer/response');
+  // Subscribe to receive user info as per the DOCS.md
+  const subscription = stompClient.subscribe('/user/topic/customer/response', (message) => {
     console.log('Received message:', message);
     try {
-      const userInfo = JSON.parse(message.body);
-      console.log('Received user info:', userInfo);
-      subscription.unsubscribe();
-      callback(userInfo);
+      const response = JSON.parse(message.body);
+      console.log('Received response:', response);
+      
+      // Check response structure based on API docs
+      if (response.status === 200 && response.result) {
+        callback(response.result);
+        // Only unsubscribe if it's a response to the info request
+        if (response.method === '/customer/info') {
+          subscription.unsubscribe();
+        }
+      } else {
+        console.error('Error in response:', response);
+        if (errorCallback) errorCallback(response.result?.content || 'Unknown error');
+      }
     } catch (e) {
-      console.error('Error parsing user info:', e);
-      if (errorCallback) errorCallback('Error parsing user data');
+      console.error('Error parsing message:', e);
+      if (errorCallback) errorCallback('Error parsing server response');
     }
   });
 
   console.log('Sending request to /app/customer/info');
-  // Request user info - this is the correct endpoint from CustomerController
+  // Request user info
   stompClient.publish({
     destination: '/app/customer/info',
     body: JSON.stringify({})
   });
+};
+
+// Get current authentication status
+const isAuthenticated = () => {
+  return !!stompClient && stompClient.connected;
+};
+
+// Get current user
+const getCurrentUser = () => {
+  return currentUser;
 };
 
 // Disconnect WebSocket
@@ -142,6 +158,8 @@ const disconnectWebSocket = () => {
   if (stompClient && stompClient.connected) {
     stompClient.deactivate();
     stompClient = null;
+    authToken = null;
+    currentUser = null;
     console.log('Disconnected from WebSocket');
   }
 };
@@ -164,5 +182,7 @@ export {
   api,
   connectWebSocket,
   getUserProfile,
-  disconnectWebSocket
+  disconnectWebSocket,
+  isAuthenticated,
+  getCurrentUser
 };
