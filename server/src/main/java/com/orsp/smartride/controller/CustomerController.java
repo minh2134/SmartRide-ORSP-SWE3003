@@ -2,10 +2,8 @@ package com.orsp.smartride.controller;
 
 
 import java.security.Principal;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -17,11 +15,11 @@ import com.orsp.smartride.dataStructures.Greetings;
 import com.orsp.smartride.dataStructures.HelloMessage;
 import com.orsp.smartride.dataStructures.Response;
 import com.orsp.smartride.dataStructures.RideRequest;
+import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.dataStructures.userResponse.ErrorResponse;
 import com.orsp.smartride.dataStructures.userResponse.MakeRideResponse;
 import com.orsp.smartride.dataStructures.userResponse.UserInfoResponse;
-import com.orsp.smartride.implementations.customer.SRCustomer;
-import com.orsp.smartride.implementations.payment.GenericPaymentMethod;
+import com.orsp.smartride.services.CustomerService;
 
 @Controller
 public class CustomerController {
@@ -32,25 +30,22 @@ public class CustomerController {
 	private SimpMessagingTemplate simpmsg;
 
 	@Autowired
-	private ConcurrentHashMap<String, SRCustomer> customers;
+	private CustomerService cusService;
 
-	@Autowired
-	private GenericPaymentMethod genericPaymentMethod;
-	
-	
 	@MessageMapping("/customer/info")
 	@SendToUser("/topic/customer/response")
 	Response userInfo(Principal principal) throws Exception {
 		String method = "/customer/info";
 		String username = principal.getName();
-
-		SRCustomer customer = customers.get(username);
-		if (customer == null) {
+		
+		if (!cusService.exists(username)) {
 			ErrorResponse error = new ErrorResponse("Unauthorized");
 			return new Response(401, method, error);
 		}
+		UserInfo customerInfo = cusService.getCustomerInfo(username);
 		
-		UserInfoResponse result = new UserInfoResponse(customer.userInfo);
+		
+		UserInfoResponse result = new UserInfoResponse(customerInfo);
 		return new Response(200, method, result);
 	}
 
@@ -60,19 +55,18 @@ public class CustomerController {
 		String method = "/customer/makeride";
 		String username = principal.getName();
 		
-		SRCustomer customer = customers.get(username);
-		if (customer == null) {
-			ErrorResponse error = new ErrorResponse("Wrong credentials");
+		if (!cusService.exists(username)) {
+			ErrorResponse error = new ErrorResponse("Unauthorized");
 			return new Response(401, method, error);
 		}
 
-		if (!customer.pay(genericPaymentMethod)) {
+		if (!cusService.genericPay(username)) {
 			ErrorResponse error = new ErrorResponse("Payment failed");
 			return new Response(401, method, error);
 		}
 
-		Ride ride = customer.makeRide(rrq);
-		
+		Ride ride = cusService.makeRide(username, rrq);
+
 		MakeRideResponse result = new MakeRideResponse(ride);
 		return new Response(200, method, result);
 	}
