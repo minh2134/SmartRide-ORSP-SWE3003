@@ -9,12 +9,12 @@ const stompClient = new StompJs.Client({
 stompClient.onConnect = (frame) => {
     setConnected(true);
     console.log('Connected: ' + frame);
-    stompClient.subscribe('/user/topic/customer/response', (greeting) => {
-        showUserInfo(greeting.body);
+    stompClient.subscribe('/user/topic/customer/response', (message) => {
+        showRawJSON(message.body);
     });
 };
 
-function showUserInfo(message) {
+function showRawJSON(message) {
 	$("#greetings").append("<tr><td>" + message + "</td></tr>");
 }
 
@@ -49,10 +49,10 @@ function disconnect() {
     console.log("Disconnected");
 }
 
-function sendName() {
+function sendJSON() {
     stompClient.publish({
         destination: "/app/customer/makeride",
-        body: JSON.stringify({'pickupLoc': $("#name").val(), 'dropoffLoc': $("#name2").val()})
+        body: JSON.stringify({'pickupLoc': $("#pickUp").val(), 'dropoffLoc': $("#dropOff").val()})
     });
 }
 
@@ -64,5 +64,5 @@ $(function () {
     $("form").on('submit', (e) => e.preventDefault());
     $( "#connect" ).click(() => connect());
     $( "#disconnect" ).click(() => disconnect());
-    $( "#send" ).click(() => sendName());
+    $( "#send" ).click(() => sendJSON());
 });

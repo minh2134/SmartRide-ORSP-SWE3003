@@ -9,6 +9,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 import com.orsp.smartride.implementations.database.SRDatabase;
@@ -55,5 +56,10 @@ public class SmartrideApplication implements CommandLineRunner {
 	@Bean
 	ConcurrentHashMap<String, SRDriver> drivers() {
 		return new ConcurrentHashMap<String, SRDriver>();
+	}
+
+	@Bean
+	ConcurrentHashMap<Integer, Ride> rides() {
+		return new ConcurrentHashMap<Integer, Ride>();
 	}
 }

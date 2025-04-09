@@ -3,12 +3,14 @@ package com.orsp.smartride.services;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.RideRequest;
 import com.orsp.smartride.dataStructures.RideRow;
 import com.orsp.smartride.dataStructures.UserInfo;
+import com.orsp.smartride.events.ride.RideCreationEvent;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 import com.orsp.smartride.implementations.database.SRDatabase;
 import com.orsp.smartride.implementations.payment.GenericPaymentMethod;
@@ -21,6 +23,9 @@ import com.orsp.smartride.implementations.payment.GenericPaymentMethod;
  */
 public class CustomerService {
 	
+	@Autowired
+	private ApplicationEventPublisher applicationEventPublisher;
+
 	@Autowired
 	private ConcurrentHashMap<String, SRCustomer> customers;
 
@@ -60,7 +65,13 @@ public class CustomerService {
 			System.out.println(rideID + "<- this is the new ride ID");
 		}
 
-		return customer.makeRide(rrq, rideID, rr.timeStamp);
+		Ride ride =  customer.makeRide(rrq, rideID, rr.timeStamp);
+		
+		// publish the event so that the RideService can handle it
+		RideCreationEvent event = new RideCreationEvent(this, ride);
+		applicationEventPublisher.publishEvent(event);
+
+		return ride;
 	}
 
 	public void cancelRide(String username) {
