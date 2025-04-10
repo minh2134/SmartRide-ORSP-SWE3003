@@ -20,6 +20,7 @@ import com.orsp.smartride.dataStructures.Response;
 import com.orsp.smartride.dataStructures.RideRequest;
 import com.orsp.smartride.dataStructures.userResponse.ErrorResponse;
 import com.orsp.smartride.dataStructures.userResponse.MakeRideResponse;
+import com.orsp.smartride.dataStructures.userResponse.RideHistoryResponse;
 import com.orsp.smartride.dataStructures.userResponse.UserInfoResponse;
 import com.orsp.smartride.dataStructures.userResponse.UserResponse;
 import com.orsp.smartride.implementations.customer.SRCustomer;
@@ -64,8 +65,45 @@ public class CustomerController {
 		return new Response(200, method, result);
 	}
 
+<<<<<<< Updated upstream
 	public void rideDone() {
 		System.out.println("Wait this shit actually works?");
+=======
+	@MessageMapping("/customer/cancelride")
+	@SendToUser("/topic/customer/response")
+	Response cancelRide(Principal principal) throws Exception {
+		String method = "/customer/cancelride";
+		String username = principal.getName();
+
+		if (!cusService.exists(username)) {
+			ErrorResponse error = new ErrorResponse("Unauthorized");
+			return new Response(401, method, error);
+		}
+		
+		if (cusService.isInARide(username)) {
+			cusService.cancelRide(username);
+			return new Response(200, method);
+		}
+		else {
+			ErrorResponse error = new ErrorResponse("Not in a ride");
+			return new Response(400, method, error);
+		}
+	}
+
+	@MessageMapping("/customer/ridehistory")
+	@SendToUser("/topic/customer/response")
+	Response getRideHistory(Principal principal) throws Exception {
+		String method = "/customer/ridehistory";
+		String username = principal.getName();
+		
+		if (!cusService.exists(username)) {
+			ErrorResponse error = new ErrorResponse("Unauthorized");
+			return new Response(401, method, error);
+		}
+		
+		RideHistoryResponse result = new RideHistoryResponse(cusService.getRideHistory(username));
+		return new Response(200, method, result);
+>>>>>>> Stashed changes
 	}
 
 	// TODO: below is test code, implement the real thing later

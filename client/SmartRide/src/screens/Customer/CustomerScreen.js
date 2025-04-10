@@ -118,6 +118,114 @@ const CustomerScreen = ({ navigation }) => {
         </View>
       );
     }
+<<<<<<< Updated upstream
+=======
+  };
+
+  // Function to handle ride cancellation
+  const handleCancelRide = () => {
+    Alert.alert(
+      "Cancel Ride",
+      "Are you sure you want to cancel your current ride request?",
+      [
+        { 
+          text: "No", 
+          style: "cancel" 
+        },
+        { 
+          text: "Yes", 
+          onPress: () => {
+            setIsSubmitting(true);
+            
+            // Check if the active ride belongs to current user
+            const currentUsername = getCurrentUser();
+            if (!currentUsername) {
+              // User may have logged out and back in, handle gracefully
+              setActiveRide(null);
+              clearActiveRideRequest(); // Clear any stale requests
+              setIsSubmitting(false);
+              Alert.alert("Ride Cancelled", "Your ride request has been reset.");
+              return;
+            }
+            
+            // Send cancellation request
+            cancelRideRequest()
+              .then(() => {
+                setActiveRide(null);
+                Alert.alert("Ride Cancelled", "Your ride request has been cancelled successfully.");
+                setIsSubmitting(false);
+              })
+              .catch(error => {
+                console.error('Cancel ride error:', error);
+                setIsSubmitting(false);
+                
+                // Handle specific error cases
+                if (typeof error === 'string' && error.includes('timeout')) {
+                  // Handle the known server bug with driver being null during cancellation
+                  setActiveRide(null);
+                  clearActiveRideRequest();
+                  Alert.alert(
+                    "Ride Cancelled Locally",
+                    "The server did not respond (likely due to a known server bug), but your ride has been cleared locally.",
+                    [{ text: "OK" }]
+                  );
+                } else if (typeof error === 'string' && error.includes('Not in a ride')) {
+                  // The server reported that there is no active ride for this user
+                  setActiveRide(null);
+                  clearActiveRideRequest();
+                  Alert.alert("No Active Ride", "You don't currently have an active ride to cancel.");
+                } else {
+                  // For other errors, give option to clear locally
+                  Alert.alert(
+                    "Cancel Ride Error",
+                    "Failed to cancel ride on server. Would you like to clear it locally?",
+                    [
+                      {
+                        text: "No",
+                        style: "cancel"
+                      },
+                      {
+                        text: "Yes",
+                        onPress: () => {
+                          setActiveRide(null);
+                          clearActiveRideRequest();
+                          Alert.alert("Ride Cleared", "Your ride request has been cleared locally.");
+                        }
+                      }
+                    ]
+                  );
+                }
+              });
+          } 
+        }
+      ]
+    );
+  };
+
+  // Render the active ride card
+  const renderActiveRideCard = () => {
+    if (!activeRide) return null;
+
+    // Determine ride status display text
+    let statusText = 'Finding Driver';
+    let statusColor = '#FF9900';
+    let statusBgColor = '#FFF7E6';
+    let statusBorderColor = '#FFD166';
+    
+    if (activeRide.driver) {
+      if (activeRide.status === 'in_progress' || activeRide.status === 'accepted') {
+        statusText = 'In Progress';
+        statusColor = '#00AA55';
+        statusBgColor = '#E6FFF0';
+        statusBorderColor = '#99EEBB';
+      } else if (activeRide.status === 'completed') {
+        statusText = 'Completed';
+        statusColor = '#007BFF';
+        statusBgColor = '#E6F4FF';
+        statusBorderColor = '#99CCFF';
+      }
+    }
+>>>>>>> Stashed changes
 
     return (
       <View style={styles.profileContainer}>
@@ -130,6 +238,7 @@ const CustomerScreen = ({ navigation }) => {
           </View>
         </View>
 
+<<<<<<< Updated upstream
         {profile.rating && (
           <View style={styles.ratingContainer}>
             <Text style={styles.ratingLabel}>Rating:</Text>
@@ -142,6 +251,61 @@ const CustomerScreen = ({ navigation }) => {
                   color={star <= Math.round(profile.rating) ? "#000000" : "#D3D3D3"} 
                 />
               ))}
+=======
+        <View style={styles.activeRideDetails}>
+          <View style={styles.activeRideItem}>
+            <Icon name="map-pin" size={18} color={colors.primary} />
+            <Text style={styles.activeRideItemText}>{activeRide.pickupLoc}</Text>
+          </View>
+          
+          <View style={styles.activeRideItem}>
+            <Icon name="flag" size={18} color="red" />
+            <Text style={styles.activeRideItemText}>{activeRide.dropoffLoc}</Text>
+          </View>
+          
+          <View style={styles.activeRideItem}>
+            <Icon name="truck" size={18} color={colors.text} />
+            <Text style={styles.activeRideItemText}>
+              {vehicleOptions.find(v => v.id === activeRide.vehicleType)?.name || activeRide.vehicleType}
+            </Text>
+          </View>
+          
+          <View style={styles.activeRideItem}>
+            <Icon name="credit-card" size={18} color={colors.text} />
+            <Text style={styles.activeRideItemText}>
+              {paymentMethods.find(p => p.id === activeRide.paymentMethod)?.name || activeRide.paymentMethod}
+            </Text>
+          </View>
+          
+          {activeRide.driver && (
+            <View style={styles.activeRideDriverSection}>
+              <Text style={styles.activeRideDriverTitle}>Driver Information</Text>
+              
+              <View style={styles.activeRideItem}>
+                <Icon name="user" size={18} color={colors.primary} />
+                <Text style={styles.activeRideItemText}>
+                  {activeRide.driver.name || activeRide.driver}
+                </Text>
+              </View>
+              
+              {activeRide.driver.phone && (
+                <View style={styles.activeRideItem}>
+                  <Icon name="phone" size={18} color={colors.primary} />
+                  <Text style={styles.activeRideItemText}>
+                    {activeRide.driver.phone}
+                  </Text>
+                </View>
+              )}
+              
+              {activeRide.status === 'completed' && (
+                <View style={styles.completedMessage}>
+                  <Icon name="check-circle" size={20} color="#00AA55" />
+                  <Text style={styles.completedMessageText}>
+                    This ride has been completed
+                  </Text>
+                </View>
+              )}
+>>>>>>> Stashed changes
             </View>
             <Text style={styles.ratingValue}>{profile.rating}</Text>
           </View>
@@ -152,6 +316,19 @@ const CustomerScreen = ({ navigation }) => {
             <Text style={styles.statLabel}>Total Trips:</Text>
             <Text style={styles.statValue}>{profile.tripCount}</Text>
           </View>
+        )}
+        
+        {/* Show the "Request New Ride" button if the current ride is completed */}
+        {activeRide.status === 'completed' && (
+          <TouchableOpacity 
+            style={styles.newRideButton}
+            onPress={() => {
+              setActiveRide(null);
+              clearActiveRideRequest();
+            }}
+          >
+            <Text style={styles.newRideButtonText}>Request New Ride</Text>
+          </TouchableOpacity>
         )}
       </View>
     );

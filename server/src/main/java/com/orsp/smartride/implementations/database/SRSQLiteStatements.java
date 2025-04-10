@@ -7,6 +7,14 @@ class SRSQLiteStatements {
 
 	public SRSQLiteStatements() {
 		customers = "SELECT * FROM customers;";
+<<<<<<< Updated upstream
+=======
+		drivers = "SELECT * FROM drivers;";
+		maxRideID = "SELECT MAX(rideID) FROM rides;";
+		insertRide = "INSERT INTO rides (customer, driver, pickupLoc, dropoffLoc, vehicleType, timeStamp, fare) VALUES (?, ?, ?, ?, ?, ?, ?);";
+		lastInsertRowID = "SELECT last_insert_rowid();";
+
+>>>>>>> Stashed changes
 	}
 
 	public String getCustomers() {
