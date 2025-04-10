@@ -22,6 +22,134 @@ export default StyleSheet.create({
     textAlign: 'center',
   },
   // Driver screen specific styles
+  readyToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    width: '100%',
+  },
+  readyToggleText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+    flex: 1,
+    marginLeft: 10,
+  },
+  // History related styles
+  historyButton: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    width: '100%',
+  },
+  historyContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    minHeight: 300,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGray,
+  },
+  historyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  historyList: {
+    paddingBottom: 16,
+  },
+  historyItem: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+  },
+  historyCustomer: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  historyStatus: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  historyCompleted: {
+    backgroundColor: '#D1F2EB',
+    borderColor: '#A3E4D7',
+  },
+  historyCancelled: {
+    backgroundColor: '#FADBD8',
+    borderColor: '#F5B7B1',
+  },
+  historyStatusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  historyDetails: {
+    marginTop: 8,
+  },
+  historyLocationText: {
+    fontSize: 14,
+    color: colors.text,
+    marginLeft: 12,
+    flex: 1,
+  },
+  historyFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.lightGray,
+  },
+  historyDate: {
+    fontSize: 12,
+    color: colors.gray,
+  },
+  historyFare: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  historyEmpty: {
+    fontSize: 16,
+    color: colors.gray,
+    textAlign: 'center',
+    marginTop: 20,
+  },
   rideCard: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -96,6 +224,12 @@ export default StyleSheet.create({
   },
   completeButton: {
     backgroundColor: '#27AE60',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  pickupButton: {
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -244,5 +378,48 @@ export default StyleSheet.create({
   retryButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  // Ride stages progress
+  rideStageContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+  rideStageItem: {
+    alignItems: 'center',
+    width: '25%',
+  },
+  rideStageCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  rideStageCompleted: {
+    backgroundColor: '#27AE60',
+  },
+  rideStageActive: {
+    backgroundColor: colors.primary,
+  },
+  rideStageIncomplete: {
+    backgroundColor: '#E0E0E0',
+  },
+  rideStageText: {
+    fontSize: 12,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  rideStageLine: {
+    height: 2,
+    backgroundColor: '#E0E0E0',
+    width: '10%',
   },
 }); 

@@ -1,63 +1,77 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
   SafeAreaView, 
   FlatList, 
   TouchableOpacity, 
-  ActivityIndicator,
   Alert
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Header from '../../components/Header/Header';
 import Icon from 'react-native-vector-icons/Feather';
-import { getRideHistory } from '../../services/api';
 import colors from '../../theme/colors';
 import styles from './styles';
 import driverHistoryStyles from './driverHistoryStyles';
 
+// Sample ride history data
+const initialRideHistory = [
+  {
+    id: 1001,
+    customer: 'Pout',
+    pickupLoc: '10.5, 105.0',
+    dropoffLoc: '15.0, 120.0',
+    fare: 65000,
+    status: 'completed',
+    date: '2023-05-15T14:30:00Z',
+    vehicleType: 'Car'
+  },
+  {
+    id: 1002,
+    customer: 'Pout',
+    pickupLoc: '10.5, 105.0',
+    dropoffLoc: '15.0, 120.0',
+    fare: 42000,
+    status: 'cancelled',
+    date: '2023-05-14T10:15:00Z',
+    vehicleType: 'Car'
+  },
+  {
+    id: 1003,
+    customer: 'Pout',
+    pickupLoc: '10.5, 105.0',
+    dropoffLoc: '15.0, 120.0',
+    fare: 78000,
+    status: 'completed',
+    date: '2023-05-10T09:30:00Z',
+    vehicleType: 'Car'
+  },
+  {
+    id: 1004,
+    customer: 'Pout',
+    pickupLoc: '10.5, 105.0',
+    dropoffLoc: '15.0, 120.0',
+    fare: 52000,
+    status: 'completed',
+    date: '2023-04-28T16:45:00Z',
+    vehicleType: 'Car'
+  },
+  {
+    id: 1005,
+    customer: 'Pout',
+    pickupLoc: '10.5, 105.0',
+    dropoffLoc: '15.0, 120.0',
+    fare: 34000,
+    status: 'cancelled',
+    date: '2023-04-22T11:20:00Z',
+    vehicleType: 'Car'
+  }
+];
+
 const DriverRideHistoryScreen = () => {
-  const route = useRoute();
-  const { username, isAuthenticated } = route.params || {};
-  
-  const [rideHistory, setRideHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const navigation = useNavigation();
+  const [rideHistory] = useState(initialRideHistory);
   const [selectedRide, setSelectedRide] = useState(null);
-
-  // Fetch ride history on component mount
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchRideHistory();
-    } else {
-      setIsLoading(false);
-      setError('You need to be logged in to view ride history.');
-    }
-  }, [isAuthenticated]);
-
-  // Fetch ride history from backend
-  const fetchRideHistory = () => {
-    setIsLoading(true);
-    setError('');
-
-    // Request ride history from backend (for driver)
-    getRideHistory()
-      .then(response => {
-        console.log('Ride history fetched:', response);
-        setRideHistory(response.rides || []);
-        setIsLoading(false);
-      })
-      .catch(error => {
-        console.error('Failed to fetch ride history:', error);
-        setError(error || 'Failed to fetch ride history. Please try again.');
-        setIsLoading(false);
-      });
-  };
-
-  // Handle refreshing the ride history
-  const handleRefresh = () => {
-    fetchRideHistory();
-  };
 
   // Render a ride history item
   const renderRideItem = ({ item }) => {
@@ -69,7 +83,9 @@ const DriverRideHistoryScreen = () => {
         onPress={() => setSelectedRide(isSelected ? null : item)}
       >
         <View style={driverHistoryStyles.rideHeader}>
-          <Text style={driverHistoryStyles.rideDate}>{item.date}</Text>
+          <Text style={driverHistoryStyles.rideDate}>
+            {new Date(item.date).toLocaleDateString()}
+          </Text>
           <View style={driverHistoryStyles.rideStatusContainer}>
             <View style={[
               driverHistoryStyles.statusIndicator, 
@@ -110,8 +126,7 @@ const DriverRideHistoryScreen = () => {
         
         <View style={driverHistoryStyles.rideDetails}>
           <Text style={driverHistoryStyles.vehicleType}>
-            {item.vehicleType === 'motorbike' ? 'Motorbike' : 
-             item.vehicleType === '4seater' ? '4-Seat Car' : '7-Seat Car'}
+            {item.vehicleType || 'Car'}
           </Text>
           <Text style={driverHistoryStyles.fareAmount}>{item.fare.toLocaleString()} VND</Text>
         </View>
@@ -123,7 +138,7 @@ const DriverRideHistoryScreen = () => {
               onPress={() => Alert.alert('Ride Details', 
                 `Ride ID: ${item.id}\n` +
                 `Customer: ${item.customer || 'Unknown'}\n` +
-                `Date: ${item.date}\n` +
+                `Date: ${new Date(item.date).toLocaleDateString()}\n` +
                 `Status: ${item.status}\n` +
                 `Earnings: ${item.fare.toLocaleString()} VND`
               )}
@@ -145,12 +160,6 @@ const DriverRideHistoryScreen = () => {
       <Text style={driverHistoryStyles.emptySubtext}>
         You haven't completed any rides yet
       </Text>
-      <TouchableOpacity 
-        style={driverHistoryStyles.refreshButton}
-        onPress={handleRefresh}
-      >
-        <Text style={driverHistoryStyles.refreshButtonText}>Refresh</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -159,34 +168,22 @@ const DriverRideHistoryScreen = () => {
       <Header title="Ride History" />
       
       <View style={styles.content}>
-        {isLoading ? (
-          <View style={driverHistoryStyles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={driverHistoryStyles.loadingText}>Loading ride history...</Text>
-          </View>
-        ) : error ? (
-          <View style={driverHistoryStyles.errorContainer}>
-            <Icon name="alert-circle" size={50} color={colors.error} />
-            <Text style={driverHistoryStyles.errorText}>{error}</Text>
-            <TouchableOpacity 
-              style={driverHistoryStyles.refreshButton}
-              onPress={handleRefresh}
-            >
-              <Text style={driverHistoryStyles.refreshButtonText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={rideHistory}
-            renderItem={renderRideItem}
-            keyExtractor={item => item.id.toString()}
-            contentContainerStyle={driverHistoryStyles.listContainer}
-            ListEmptyComponent={renderEmptyState}
-            showsVerticalScrollIndicator={false}
-            onRefresh={handleRefresh}
-            refreshing={isLoading}
-          />
-        )}
+        <FlatList
+          data={rideHistory}
+          renderItem={renderRideItem}
+          keyExtractor={item => item.id.toString()}
+          contentContainerStyle={driverHistoryStyles.listContainer}
+          ListEmptyComponent={renderEmptyState}
+          showsVerticalScrollIndicator={false}
+        />
+        
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-left" size={18} color="white" style={{marginRight: 8}} />
+          <Text style={styles.buttonText}>Back to Dashboard</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
