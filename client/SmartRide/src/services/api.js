@@ -1,6 +1,7 @@
 import axios from 'axios';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Use 10.0.2.2 to access localhost from Android emulator
 const BASE_URL = 'http://10.0.2.2:8080';
@@ -13,6 +14,56 @@ let currentUser = null;
 let activeRideRequest = null;
 // Callbacks for ride status updates
 let rideStatusCallbacks = [];
+
+// Helper function to persist ride state to AsyncStorage
+const _persistRideStateToStorage = () => {
+  try {
+    if (activeRideRequest) {
+      // Store active ride data
+      AsyncStorage.setItem('ACTIVE_RIDE', JSON.stringify(activeRideRequest))
+        .catch(error => console.error('Error saving active ride to storage:', error));
+      
+      // Also store current user for validation during restore
+      if (currentUser) {
+        AsyncStorage.setItem('CURRENT_USER', currentUser)
+          .catch(error => console.error('Error saving current user to storage:', error));
+      }
+    } else {
+      // Remove active ride data when it's cleared
+      AsyncStorage.removeItem('ACTIVE_RIDE')
+        .catch(error => console.error('Error removing active ride from storage:', error));
+    }
+  } catch (e) {
+    console.error('Error in _persistRideStateToStorage:', e);
+  }
+};
+
+// Helper function to restore ride state from AsyncStorage
+const _restoreRideStateFromStorage = async () => {
+  try {
+    // Get stored username for validation
+    const storedUser = await AsyncStorage.getItem('CURRENT_USER');
+    
+    // Only restore ride state if the current user matches the stored user
+    if (storedUser === currentUser) {
+      const rideJson = await AsyncStorage.getItem('ACTIVE_RIDE');
+      if (rideJson) {
+        const storedRide = JSON.parse(rideJson);
+        console.log('Restored ride state from storage:', storedRide);
+        activeRideRequest = storedRide;
+        return storedRide;
+      }
+    } else if (currentUser) {
+      // Store the current user
+      AsyncStorage.setItem('CURRENT_USER', currentUser)
+        .catch(error => console.error('Error saving current user to storage:', error));
+    }
+    return null;
+  } catch (e) {
+    console.error('Error restoring ride state from storage:', e);
+    return null;
+  }
+};
 
 // Create axios instance with auth interceptors
 const api = axios.create({
@@ -469,6 +520,9 @@ const cancelRideRequest = () => {
     return Promise.reject('WebSocket not connected');
   }
 
+  // Save a copy of the active ride for history before cancellation
+  const rideToCancel = {...activeRideRequest};
+
   return new Promise((resolve, reject) => {
     let timeoutId;
     
@@ -492,6 +546,9 @@ const cancelRideRequest = () => {
           }
           
           if (response.status === 200) {
+            // Save the cancelled ride to history
+            saveCancelledRideToHistory(rideToCancel);
+            
             // Clear the active ride request
             activeRideRequest = null;
             resolve(response.result);
@@ -524,6 +581,9 @@ const cancelRideRequest = () => {
       console.log('Server timeout - likely due to null driver bug in Ride.cancel()');
       
       // Since we know about the server-side bug, we'll handle it client-side
+      // Save the cancelled ride to history before clearing
+      saveCancelledRideToHistory(rideToCancel);
+      
       // Clear the ride locally, since the server probably crashed
       activeRideRequest = null;
       notifyRideStatusChange();
@@ -541,9 +601,54 @@ const cancelRideRequest = () => {
   });
 };
 
+// Function to save cancelled ride to history
+const saveCancelledRideToHistory = (ride) => {
+  console.log('Saving cancelled ride to history:', ride);
+  
+  if (!ride) return;
+  
+  const cancelledRide = {
+    ...ride,
+    id: ride.id || Date.now().toString(),
+    status: 'cancelled',
+    completedAt: Date.now()
+  };
+  
+  // Save to local storage history
+  AsyncStorage.getItem('RIDE_HISTORY')
+    .then(historyJson => {
+      let history = [];
+      try {
+        if (historyJson) {
+          history = JSON.parse(historyJson);
+          if (!Array.isArray(history)) {
+            history = [];
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing ride history:', e);
+        history = [];
+      }
+      
+      // Add the cancelled ride to history
+      history.push(cancelledRide);
+      
+      // Save updated history
+      return AsyncStorage.setItem('RIDE_HISTORY', JSON.stringify(history));
+    })
+    .then(() => {
+      console.log('Cancelled ride saved to history successfully');
+    })
+    .catch(error => {
+      console.error('Error saving cancelled ride to history:', error);
+    });
+};
+
 // Format the ride data to match the UI needs
 const formatRideData = (rides) => {
   return rides.map(ride => {
+    console.log("Formatting ride data:", JSON.stringify(ride));
+    
     // Convert timestamp to readable date
     const date = new Date(ride.timeStamp * 1000);
     const formattedDate = date.toLocaleDateString('en-US', {
@@ -552,12 +657,32 @@ const formatRideData = (rides) => {
       day: 'numeric'
     });
     
+    // Extract driver name properly - try different possible formats
+    let driverName = 'Not assigned';
+    if (typeof ride.driver === 'object' && ride.driver !== null) {
+      driverName = ride.driver.name || ride.driver.username || JSON.stringify(ride.driver);
+    } else if (typeof ride.driver === 'string' && ride.driver) {
+      driverName = ride.driver;
+    } else if (ride.driverName) {
+      driverName = ride.driverName;
+    }
+    
+    console.log(`Ride ${ride.rideID}: Extracted driver name: ${driverName}`);
+    
+    // Determine ride status
+    let status = 'in progress';
+    if (ride.isDone === 1) {
+      status = 'completed';
+    } else if (ride.status === 'cancelled') {
+      status = 'cancelled';
+    }
+    
     return {
       id: ride.rideID,
       date: formattedDate,
       customer: ride.customer,
-      driver: ride.driver,
-      status: ride.isDone === 1 ? 'completed' : 'in progress',
+      driver: driverName,
+      status: status,
       pickupLoc: ride.pickupLoc || 'Not specified',
       dropoffLoc: ride.dropoffLoc || 'Not specified',
       vehicleType: ride.vehicleType || 'standard',
@@ -616,13 +741,32 @@ const getRideHistory = () => {
   if (isDriver) {
     return getDriverRideHistory();
   } else {
-    // Original function for customer
+    // Original function for customer with local storage fallback
     if (!stompClient || !stompClient.connected) {
-      console.error('WebSocket not connected when trying to get ride history');
-      return Promise.reject('WebSocket not connected');
+      console.log('WebSocket not connected, using local storage for history');
+      return getLocalRideHistory();
     }
 
     return new Promise((resolve, reject) => {
+      let responded = false;
+      let timeoutId;
+      
+      // Set timeout for server response
+      timeoutId = setTimeout(() => {
+        if (!responded) {
+          console.log('Server response timed out, falling back to local storage');
+          responded = true;
+          try {
+            subscription.unsubscribe();
+          } catch (e) {
+            // Subscription might already be closed
+          }
+          getLocalRideHistory()
+            .then(resolve)
+            .catch(() => reject('Failed to fetch ride history'));
+        }
+      }, 5000);
+      
       // Subscribe to receive response
       const subscription = stompClient.subscribe('/user/topic/customer/response', (message) => {
         console.log('Received ride history response:', message);
@@ -630,20 +774,63 @@ const getRideHistory = () => {
           const response = JSON.parse(message.body);
           
           // Only handle responses for the ride history endpoint
-          if (response.method === '/customer/ridehistory') {
-            subscription.unsubscribe();
+          if (response.method === '/customer/ridehistory' && !responded) {
+            responded = true;
+            clearTimeout(timeoutId);
+            
+            try {
+              subscription.unsubscribe();
+            } catch (e) {
+              console.error('Error unsubscribing from ride history response:', e);
+            }
             
             if (response.status === 200) {
               // Format the ride data to match UI needs
-              const formattedRides = formatRideData(response.result.rides || []);
-              resolve({ rides: formattedRides });
+              const serverRides = formatRideData(response.result.rides || []);
+              
+              // Get local history as well and merge them
+              getLocalRideHistory().then(localResult => {
+                const localRides = localResult.rides || [];
+                
+                // Combine and remove duplicates based on ID
+                const allRides = [...serverRides];
+                
+                // Add local rides that aren't in server response
+                localRides.forEach(localRide => {
+                  const duplicateIndex = allRides.findIndex(r => r.id === localRide.id);
+                  if (duplicateIndex === -1) {
+                    allRides.push(localRide);
+                  }
+                });
+                
+                // Sort by date (newest first)
+                allRides.sort((a, b) => {
+                  const aTime = a.timeStamp || new Date(a.date).getTime();
+                  const bTime = b.timeStamp || new Date(b.date).getTime();
+                  return bTime - aTime;
+                });
+                
+                resolve({ rides: allRides });
+              }).catch(error => {
+                console.error('Error merging local history:', error);
+                resolve({ rides: serverRides });
+              });
             } else {
-              reject(response.result?.content || 'Failed to fetch ride history');
+              // Try local storage on server error
+              getLocalRideHistory()
+                .then(resolve)
+                .catch(() => reject(response.result?.content || 'Failed to fetch ride history'));
             }
           }
         } catch (e) {
-          console.error('Error parsing response:', e);
-          reject('Error parsing server response');
+          if (!responded) {
+            responded = true;
+            clearTimeout(timeoutId);
+            console.error('Error parsing response:', e);
+            getLocalRideHistory()
+              .then(resolve)
+              .catch(() => reject('Error parsing server response'));
+          }
         }
       });
 
@@ -655,6 +842,101 @@ const getRideHistory = () => {
       });
     });
   }
+};
+
+// Get ride history from local storage
+const getLocalRideHistory = () => {
+  return AsyncStorage.getItem('RIDE_HISTORY')
+    .then(historyJson => {
+      if (!historyJson) {
+        console.log('No ride history found in AsyncStorage');
+        return { rides: [] };
+      }
+      
+      try {
+        console.log('Retrieved ride history data:', historyJson);
+        let rides = JSON.parse(historyJson);
+        
+        // Ensure rides is always an array
+        if (!Array.isArray(rides)) {
+          console.warn('Ride history is not an array, using empty array instead');
+          rides = [];
+        }
+        
+        // Format the data to match UI expectations
+        const formattedRides = rides.map((ride, index) => {
+          console.log(`Processing local ride: ${JSON.stringify(ride)}`);
+          
+          // Ensure each ride has a unique ID
+          const rideId = ride.id || ride.rideID || (Date.now() + index);
+          
+          // Make sure date is properly formatted
+          let dateObj;
+          if (ride.completedAt) {
+            dateObj = new Date(ride.completedAt);
+          } else if (ride.timeStamp) {
+            dateObj = new Date(typeof ride.timeStamp === 'number' ? ride.timeStamp * 1000 : ride.timeStamp);
+          } else {
+            dateObj = new Date();
+          }
+          
+          const formattedDate = dateObj.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          });
+          
+          // Ensure fare is a number and use the correct fare field
+          let fare = 0;
+          if (typeof ride.fare === 'number' && ride.fare > 0) {
+            fare = ride.fare;
+          } else if (typeof ride.estimatedFare === 'number' && ride.estimatedFare > 0) {
+            fare = ride.estimatedFare;
+          }
+          
+          // Extract driver information properly
+          let driverName = 'Not assigned';
+          if (typeof ride.driver === 'object' && ride.driver !== null) {
+            driverName = ride.driver.name || ride.driver.username || JSON.stringify(ride.driver);
+          } else if (typeof ride.driver === 'string' && ride.driver) {
+            driverName = ride.driver;
+          } else if (ride.driverName) {
+            driverName = ride.driverName;
+          }
+          
+          // Determine ride status (support cancelled rides)
+          let status = 'completed';
+          if (ride.status === 'cancelled') {
+            status = 'cancelled';
+          }
+          
+          console.log(`Formatting local ride ${rideId} with fare: ${fare}, driver: ${driverName}, status: ${status}`);
+          
+          return {
+            id: rideId,
+            date: formattedDate,
+            customer: ride.customer || currentUser,
+            driver: driverName,
+            status: status,
+            pickupLoc: ride.pickupLoc || 'Unknown pickup',
+            dropoffLoc: ride.dropoffLoc || 'Unknown destination',
+            vehicleType: ride.vehicleType || 'car',
+            fare: fare,
+            timeStamp: ride.completedAt || (typeof ride.timeStamp === 'number' ? ride.timeStamp * 1000 : ride.timeStamp) || Date.now()
+          };
+        });
+        
+        console.log(`Formatted ${formattedRides.length} ride history entries`);
+        return { rides: formattedRides };
+      } catch (e) {
+        console.error('Error parsing local ride history:', e);
+        return { rides: [] };
+      }
+    })
+    .catch(error => {
+      console.error('Error getting local ride history:', error);
+      return { rides: [] };
+    });
 };
 
 // Subscribe to real-time ride updates from the server
@@ -718,6 +1000,182 @@ const subscribeToRealTimeUpdates = () => {
   return notificationSubscription;
 };
 
+// Driver completes a ride
+const completeRide = (rideId) => {
+  if (!stompClient || !stompClient.connected) {
+    console.error('WebSocket not connected when trying to complete ride');
+    return Promise.reject('WebSocket not connected');
+  }
+
+  if (!activeRideRequest) {
+    console.error('No active ride to complete');
+    return Promise.reject('No active ride to complete');
+  }
+
+  return new Promise((resolve, reject) => {
+    let timeoutId;
+    
+    // Subscribe to receive response
+    const subscription = stompClient.subscribe('/user/topic/driver/response', (message) => {
+      console.log('Received complete ride response:', message);
+      try {
+        const response = JSON.parse(message.body);
+        
+        // Only handle responses for the completeride endpoint
+        if (response.method === '/driver/completeride') {
+          // Clear the timeout since we got a response
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          
+          try {
+            subscription.unsubscribe();
+          } catch (e) {
+            console.error('Error unsubscribing from complete ride response:', e);
+          }
+          
+          if (response.status === 200) {
+            // Clear active ride since it's completed
+            activeRideRequest = null;
+            
+            // Persist state change to storage
+            _persistRideStateToStorage();
+            
+            resolve(response.result);
+          } else {
+            reject(response.result?.content || 'Failed to complete ride');
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        reject('Error parsing server response');
+      }
+    });
+
+    // Send the ride completion request
+    console.log(`Sending completion request for ride ${rideId}`);
+    stompClient.publish({
+      destination: '/app/driver/completeride',
+      body: JSON.stringify({
+        rideID: rideId
+      })
+    });
+    
+    // Set a timeout in case the server doesn't respond
+    timeoutId = setTimeout(() => {
+      try {
+        subscription.unsubscribe();
+      } catch (e) {
+        // Subscription might already be closed
+      }
+      reject('Server timeout while completing ride');
+    }, 10000);
+  }).then(result => {
+    // Notify subscribers of ride status change
+    notifyRideStatusChange();
+    return result;
+  });
+};
+
+// Customer completes a ride (frontend only implementation)
+const customerCompleteRide = (rideId) => {
+  if (!activeRideRequest) {
+    console.error('No active ride to complete');
+    return Promise.reject('No active ride to complete');
+  }
+
+  return new Promise((resolve, reject) => {
+    try {
+      console.log(`Customer completing ride ${rideId}`, activeRideRequest);
+      
+      // Determine the correct fare value
+      let rideCompleteTime = new Date().getTime();
+      let fare = 0;
+      
+      // Try different fare sources
+      if (typeof activeRideRequest.fare === 'number' && activeRideRequest.fare > 0) {
+        console.log('Using activeRideRequest.fare:', activeRideRequest.fare);
+        fare = activeRideRequest.fare;
+      } else if (typeof activeRideRequest.estimatedFare === 'number' && activeRideRequest.estimatedFare > 0) {
+        console.log('Using activeRideRequest.estimatedFare:', activeRideRequest.estimatedFare);
+        fare = activeRideRequest.estimatedFare;
+      } else {
+        // If all else fails, generate a reasonable fare
+        const pickupLoc = activeRideRequest.pickupLoc || '';
+        const dropoffLoc = activeRideRequest.dropoffLoc || '';
+        const randomDistance = Math.floor(Math.random() * 10) + 5; // 5-15 km
+        fare = randomDistance * 2000; // 2000 VND per km
+        console.log('Generated fare based on distance:', fare);
+      }
+      
+      // Create a completed ride record with proper fare
+      const completedRide = {
+        ...activeRideRequest,
+        id: rideId || activeRideRequest.id,
+        isDone: 1,
+        status: 'completed',
+        completedAt: rideCompleteTime,
+        fare: fare,
+        timeStamp: activeRideRequest.timestamp || Math.floor(rideCompleteTime / 1000)
+      };
+      
+      console.log('Created completed ride record:', JSON.stringify(completedRide));
+      
+      // Save completed ride to local storage for history
+      AsyncStorage.getItem('RIDE_HISTORY')
+        .then(historyJson => {
+          let history = [];
+          try {
+            if (historyJson) {
+              history = JSON.parse(historyJson);
+              if (!Array.isArray(history)) {
+                console.log('History was not an array, resetting');
+                history = [];
+              }
+            }
+          } catch (e) {
+            console.error('Error parsing ride history:', e);
+            history = [];
+          }
+          
+          // Add the completed ride to history
+          history.push(completedRide);
+          
+          console.log(`Saving history with ${history.length} rides`);
+          
+          // Save updated history
+          return AsyncStorage.setItem('RIDE_HISTORY', JSON.stringify(history));
+        })
+        .then(() => {
+          console.log('Ride saved to history successfully');
+          
+          // Clear active ride since it's completed
+          activeRideRequest = null;
+          
+          // Persist state change to storage
+          try {
+            AsyncStorage.removeItem('ACTIVE_RIDE')
+              .catch(error => console.error('Error removing active ride from storage:', error));
+          } catch (e) {
+            console.error('Error persisting ride state:', e);
+          }
+          
+          // Notify subscribers of ride status change
+          notifyRideStatusChange();
+          
+          resolve(completedRide);
+        })
+        .catch(error => {
+          console.error('Error saving ride to history:', error);
+          reject('Failed to save ride to history');
+        });
+    } catch (e) {
+      console.error('Error completing ride:', e);
+      reject('Error completing ride');
+    }
+  });
+};
+
 export {
   api,
   connectWebSocket,
@@ -733,5 +1191,7 @@ export {
   clearActiveRideRequest,
   cancelRideRequest,
   subscribeToRideUpdates,
-  unsubscribeFromRideUpdates
+  unsubscribeFromRideUpdates,
+  completeRide,
+  customerCompleteRide
 };

@@ -27,7 +27,8 @@ import {
   getCurrentUser, 
   isAuthenticated,
   subscribeToRideUpdates,
-  unsubscribeFromRideUpdates
+  unsubscribeFromRideUpdates,
+  customerCompleteRide
 } from '../../services/api';
 import styles from './customerStyles';
 import colors from '../../theme/colors';
@@ -170,6 +171,12 @@ const CustomerScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // New state for active ride
   const [activeRide, setActiveRide] = useState(null);
+  // New state for completion confirmation modal
+  const [showCompletionConfirmModal, setShowCompletionConfirmModal] = useState(false);
+  // New state for ride completion success modal
+  const [showCompletionSuccessModal, setShowCompletionSuccessModal] = useState(false);
+  // New state for cancellation confirmation
+  const [showCancellationConfirmModal, setShowCancellationConfirmModal] = useState(false);
 
   // Vehicle options
   const vehicleOptions = [
@@ -576,6 +583,44 @@ const CustomerScreen = () => {
     );
   };
 
+  // Handle ride completion request
+  const handleRideComplete = () => {
+    // Show confirmation modal first
+    setShowCompletionConfirmModal(true);
+  };
+  
+  // Confirm and process ride completion
+  const confirmRideComplete = () => {
+    setShowCompletionConfirmModal(false);
+    setIsSubmitting(true);
+    
+    // Use the customerCompleteRide API function
+    customerCompleteRide(activeRide.id)
+      .then(completedRide => {
+        console.log('Ride completed successfully:', completedRide);
+        setIsSubmitting(false);
+        
+        // Show success modal
+        setShowCompletionSuccessModal(true);
+        
+        // Clear active ride after a delay
+        setTimeout(() => {
+          setShowCompletionSuccessModal(false);
+          setActiveRide(null);
+        }, 3000);
+      })
+      .catch(error => {
+        console.error('Error completing ride:', error);
+        setIsSubmitting(false);
+        
+        Alert.alert(
+          'Error',
+          'Failed to complete ride. Please try again.',
+          [{ text: 'OK' }]
+        );
+      });
+  };
+
   // Render the active ride card
   const renderActiveRideCard = () => {
     if (!activeRide) return null;
@@ -680,17 +725,52 @@ const CustomerScreen = () => {
           </View>
         </View>
         
-        {/* Only show cancel button if ride is still in "finding driver" state */}
-        {(!activeRide.driver || activeRide.status === 'pending') && (
-          <TouchableOpacity 
-            style={styles.cancelRideButton}
-            onPress={handleCancelRide}
-          >
-            <Text style={styles.cancelRideButtonText}>Cancel Ride</Text>
-          </TouchableOpacity>
-        )}
+        {/* Action buttons based on ride state */}
+        <View style={styles.rideActionButtonsContainer}>
+          {/* Cancel button - show if ride is pending or finding driver */}
+          {(!activeRide.driver || activeRide.status === 'pending') && (
+            <TouchableOpacity 
+              style={styles.cancelRideButton}
+              onPress={handleCancelRide}
+            >
+              <Text style={styles.cancelRideButtonText}>Cancel Ride</Text>
+            </TouchableOpacity>
+          )}
+          
+          {/* Complete ride button - show when driver is assigned */}
+          {activeRide.driver && (
+            <TouchableOpacity 
+              style={styles.cancelBookingButton}
+              onPress={() => setShowCancellationConfirmModal(true)}
+            >
+              <Text style={styles.cancelBookingButtonText}>Cancel Booking</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
+  };
+
+  // Add this new function to handle cancellation confirmation
+  const confirmCancelBooking = () => {
+    setShowCancellationConfirmModal(false);
+    setIsSubmitting(true);
+    
+    // Use the existing cancelRideRequest function from api.js
+    cancelRideRequest()
+      .then(() => {
+        console.log('Ride cancelled successfully');
+        // Show success message if needed
+        Alert.alert('Success', 'Your booking has been cancelled');
+        setActiveRide(null);
+      })
+      .catch(error => {
+        console.error('Error cancelling ride:', error);
+        Alert.alert('Error', 'Failed to cancel booking. Please try again.');
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   return (
@@ -883,8 +963,8 @@ const CustomerScreen = () => {
                 <Text style={styles.modalItemLabel}>Payment:</Text>
                 <Text style={styles.modalItemValue}>
                   {paymentMethods.find(p => p.id === paymentMethod)?.name}
-        </Text>
-      </View>
+                </Text>
+              </View>
             </View>
             
             <View style={styles.fareModalContainer}>
@@ -911,18 +991,180 @@ const CustomerScreen = () => {
         </View>
       </Modal>
 
+      {/* Ride Completion Confirmation Modal */}
+      <Modal
+        visible={showCompletionConfirmModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCompletionConfirmModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Complete Ride?</Text>
+            <Text style={styles.modalText}>
+              Have you arrived at your destination? This will mark your ride as complete.
+            </Text>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowCompletionConfirmModal(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Not Yet</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.modalConfirmButton}
+                onPress={confirmRideComplete}
+              >
+                <Text style={styles.modalConfirmButtonText}>Yes, Complete Ride</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Ride Completion Success Modal */}
+      <Modal
+        visible={showCompletionSuccessModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCompletionSuccessModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, styles.successModalContent]}>
+            <Icon name="check-circle" size={60} color="#00AA55" />
+            <Text style={styles.successModalTitle}>
+              You have arrived at your destination!
+            </Text>
+            <Text style={styles.successModalSubtitle}>
+              Ride completed successfully.
+            </Text>
+            <Text style={styles.successModalText}>
+              This ride will be saved to your ride history.
+            </Text>
+            <Text style={styles.successModalFare}>
+              Total Fare: {activeRide?.fare?.toLocaleString() || activeRide?.estimatedFare?.toLocaleString() || '0'} VND
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
       {/* Loading overlay when submitting */}
       {isSubmitting && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Finding your driver...</Text>
+          <Text style={styles.loadingText}>
+            {activeRide && activeRide.driver ? 'Completing your ride...' : 'Finding your driver...'}
+          </Text>
           <Text style={[styles.loadingText, { fontSize: 14, marginTop: 5, opacity: 0.7 }]}>
-            Drivers are being notified about your request
+            {activeRide && activeRide.driver ? 'Saving ride details to history' : 'Drivers are being notified about your request'}
           </Text>
         </View>
       )}
+
+      {/* Cancellation Confirmation Modal */}
+      <Modal
+        visible={showCancellationConfirmModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCancellationConfirmModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cancel Booking?</Text>
+            <Text style={styles.modalText}>
+              Are you sure you want to cancel this booking? This action cannot be undone.
+            </Text>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowCancellationConfirmModal(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>No, Keep Booking</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.modalConfirmButton}
+                onPress={confirmCancelBooking}
+              >
+                <Text style={styles.modalConfirmButtonText}>Yes, Cancel Booking</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
+
+// Add these new styles
+const additionalStyles = {
+  rideActionButtonsContainer: {
+    marginTop: 15,
+    alignItems: 'center',
+  },
+  completeRideButton: {
+    backgroundColor: '#00AA55',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    width: '100%', 
+    alignItems: 'center',
+  },
+  completeRideButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  cancelBookingButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    width: '100%', 
+    alignItems: 'center',
+  },
+  cancelBookingButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  successModalContent: {
+    alignItems: 'center',
+    paddingVertical: 30,
+    backgroundColor: 'white',
+  },
+  successModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#00AA55',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  successModalSubtitle: {
+    fontSize: 16,
+    color: '#333',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  successModalText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  successModalFare: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#00AA55',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+};
+
+// Apply the new styles
+Object.assign(styles, additionalStyles);
 
 export default CustomerScreen; 
