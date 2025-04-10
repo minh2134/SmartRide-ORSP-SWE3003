@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS authorities;
 DROP TABLE IF EXISTS customers;
 DROP TABLE IF EXISTS drivers;
+DROP TABLE IF EXISTS managers;
 DROP TABLE IF EXISTS sex;
 DROP TABLE IF EXISTS rides;
 
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS authorities (
 
 CREATE TABLE IF NOT EXISTS customers (
 	username	TEXT PRIMARY KEY,
-	name		TEXT,
+	name		TEXT NOT NULL,
 	age		INTEGER NOT NULL,
 	sex		TEXT,
 	phone		TEXT,
@@ -35,7 +36,7 @@ CREATE TABLE IF NOT EXISTS customers (
 
 CREATE TABLE IF NOT EXISTS drivers (
 	username 	TEXT PRIMARY KEY,
-	name 		TEXT,
+	name 		TEXT NOT NULL,
 	age 		INTEGER NOT NULL,
 	sex 		TEXT,
 	phone 		TEXT,
@@ -43,6 +44,17 @@ CREATE TABLE IF NOT EXISTS drivers (
 	FOREIGN KEY(username) REFERENCES users(username),
 	FOREIGN KEY(sex) REFERENCES sex(name)
 );
+
+CREATE TABLE IF NOT EXISTS managers (
+	username	TEXT PRIMARY KEY,
+	name		TEXT NOT NULL,
+	age		INTEGER NOT NULL,
+	sex 		TEXT,
+	phone		TEXT,
+	FOREIGN KEY(username) REFERENCES users(username),
+	FOREIGN KEY(sex) REFERENCES sex(name)
+);
+
 
 CREATE TABLE IF NOT EXISTS rides(
 	rideID		INTEGER PRIMARY KEY,

@@ -9,6 +9,7 @@ class SRSQLiteStatements {
 	private String insertRide;
 	private String lastInsertRowID;
 	private String removeRide;
+	private String getRides;
 
 	public SRSQLiteStatements() {
 		customers = "SELECT * FROM customers;";
@@ -17,6 +18,7 @@ class SRSQLiteStatements {
 		insertRide = "INSERT INTO rides (customer, driver, pickupLoc, dropoffLoc, vehicleType, timeStamp) VALUES (?, ?, ?, ?, ?, ?);";
 		lastInsertRowID = "SELECT last_insert_rowid();";
 		removeRide = "DELETE FROM rides WHERE rideID = ?;";
+		getRides = "SELECT * FROM rides;";
 
 	}
 
@@ -42,5 +44,9 @@ class SRSQLiteStatements {
 
 	public String getRemoveRide() {
 		return removeRide;
+	}
+
+	public String getGetRides() {
+		return getRides;
 	}
 }

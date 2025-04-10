@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import com.orsp.smartride.coreLogic.database.Database;
 import com.orsp.smartride.dataStructures.RideRow;
 import com.orsp.smartride.dataStructures.UserInfo;
+import com.orsp.smartride.implementations.Manager;
 import com.orsp.smartride.implementations.driver.DriverInfo;
 
 @Component
@@ -53,6 +54,21 @@ public class SRDatabase extends Database {
 				return userInfo;
 			}
 		});
+	}	
+
+	public List<Manager> getManagers() {
+		return db.query(sqlStatements.getCustomers(), new RowMapper<Manager>() {
+			public Manager mapRow(ResultSet rs, int rowNum) 
+				throws SQLException {
+				Manager manager = new Manager(
+						rs.getString(1),
+						rs.getString(2),
+						rs.getInt(3),
+						rs.getString(4),
+						rs.getString(5));
+				return manager;
+			}
+		});
 	}
 	
 	public int insertRide(RideRow rr) {
@@ -68,5 +84,23 @@ public class SRDatabase extends Database {
 		});
 		
 		return result.get(0);
+	}
+
+	public List<RideRow> getRides() {
+		return db.query(sqlStatements.getGetRides(), new RowMapper<RideRow>() {
+			public RideRow mapRow(ResultSet rs, int rowNum)
+				throws SQLException {
+				RideRow row = new RideRow(rs.getInt(1));
+				row.customer = rs.getString(2);
+				row.driver = rs.getString(3);
+				row.pickupLoc = rs.getString(4);
+				row.dropoffLoc = rs.getString(5);
+				row.vehicleType = rs.getString(6);
+				row.isDone = rs.getInt(7);
+				row.timeStamp = rs.getInt(8);
+
+				return row;
+			}
+		});
 	}
 }

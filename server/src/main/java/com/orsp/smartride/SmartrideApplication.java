@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 
 import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.UserInfo;
+import com.orsp.smartride.implementations.Manager;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 import com.orsp.smartride.implementations.database.SRDatabase;
 import com.orsp.smartride.implementations.driver.DriverInfo;
@@ -46,6 +47,16 @@ public class SmartrideApplication implements CommandLineRunner {
 			drivers().put(driver.getUsername(), driver);
 		}
 
+		// Creating manager objects, assigning it to a map
+		List<Manager> managerObjects = db.getManagers();
+
+		for (int i=0; i<managerObjects.size(); i++) {
+			Manager manager = managerObjects.get(i);
+			managers().put(manager.getUsername(), manager);
+		}
+
+		
+
 	}
 
 	@Bean
@@ -56,6 +67,11 @@ public class SmartrideApplication implements CommandLineRunner {
 	@Bean
 	ConcurrentHashMap<String, SRDriver> drivers() {
 		return new ConcurrentHashMap<String, SRDriver>();
+	}
+
+	@Bean
+	ConcurrentHashMap<String, Manager> managers() {
+		return new ConcurrentHashMap<String, Manager>();
 	}
 
 	@Bean

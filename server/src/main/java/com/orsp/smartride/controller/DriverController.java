@@ -60,4 +60,12 @@ public class DriverController {
 				notification);
 	}
 	
+	@MessageMapping("/driver/locationupdate")
+	@SendToUser("/topic/driver/response")
+	Response driverLocationUpdate(Principal principal) throws Exception {
+		String method = "/driver/locationupdate";
+		
+		
+		return new Response(200, method);
+	}
 }

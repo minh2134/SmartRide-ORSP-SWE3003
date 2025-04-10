@@ -1,8 +1,8 @@
 const stompClient = new StompJs.Client({
     brokerURL: 'ws://localhost:8080/ws',
     connectHeaders: {
-        login: "driverAlt",
-        passcode: "driverAlt",
+        login: "driver",
+        passcode: "driver",
     },
 });
 
