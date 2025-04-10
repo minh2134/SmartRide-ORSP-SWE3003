@@ -124,6 +124,6 @@ public class CustomerController {
 	@MessageMapping("/spechello")
 	public void specGreetings(@Payload HelloMessage message) throws Exception {
 		Greetings out = new Greetings("Hello, " + "World!" + "!");
-		simpmsg.convertAndSendToUser("customer", "topic/customer/response", out);
+		simpmsg.convertAndSendToUser("customer", "/topic/customer/response", out);
 	}
 }
