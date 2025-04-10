@@ -4,13 +4,11 @@ import colors from '../../theme/colors';
 export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.backgroundColor,
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    padding: 16,
   },
   message: {
     fontSize: 24,
@@ -22,6 +20,120 @@ export default StyleSheet.create({
     fontSize: 16,
     color: colors.darkGray,
     textAlign: 'center',
+  },
+  // Driver screen specific styles
+  rideCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+  },
+  rideCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  rideCardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  rideStatusBadge: {
+    backgroundColor: '#FFE8C3',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#FFCB8B',
+  },
+  rideStatusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#FF9500',
+  },
+  activeStatusBadge: {
+    backgroundColor: '#D1F2EB',
+    borderColor: '#A3E4D7',
+  },
+  activeStatusText: {
+    color: '#16A085',
+  },
+  rideDetails: {
+    marginBottom: 16,
+  },
+  rideInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  rideInfoText: {
+    fontSize: 16,
+    color: colors.text,
+    marginLeft: 12,
+    flex: 1,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  locationText: {
+    fontSize: 16,
+    color: colors.text,
+    marginLeft: 12,
+    flex: 1,
+  },
+  completeButton: {
+    backgroundColor: '#27AE60',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  waitingContainer: {
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+  },
+  waitingTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+    color: colors.text,
+  },
+  waitingText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+    color: colors.gray,
+    lineHeight: 20,
+  },
+  scrollContentContainer: {
+    flexGrow: 1,
   },
   // Profile screen styles
   profileContent: {

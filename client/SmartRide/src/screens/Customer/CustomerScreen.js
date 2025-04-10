@@ -1059,8 +1059,8 @@ const CustomerScreen = () => {
           </Text>
           <Text style={[styles.loadingText, { fontSize: 14, marginTop: 5, opacity: 0.7 }]}>
             {activeRide && activeRide.driver ? 'Saving ride details to history' : 'Drivers are being notified about your request'}
-          </Text>
-        </View>
+        </Text>
+      </View>
       )}
 
       {/* Cancellation Confirmation Modal */}

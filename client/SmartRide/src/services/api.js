@@ -179,8 +179,12 @@ const connectWebSocket = (username, password, onConnect, onError) => {
       notifyRideStatusChange();
     });
     
-    // Subscribe to real-time updates if we're a customer
-    if (!username.startsWith('driver')) {
+    // Subscribe to real-time updates based on user type
+    if (username.startsWith('driver')) {
+      // For drivers: subscribe to ride assignment notifications
+      subscribeToDriverAssignments();
+    } else {
+      // For customers: subscribe to ride status notifications
       subscribeToRealTimeUpdates();
     }
     
@@ -1176,6 +1180,196 @@ const customerCompleteRide = (rideId) => {
   });
 };
 
+// Get the next pending ride for a driver
+const getNextPendingRide = () => {
+  if (!stompClient || !stompClient.connected) {
+    console.error('WebSocket not connected when trying to get next pending ride');
+    return Promise.reject('WebSocket not connected');
+  }
+
+  return new Promise((resolve, reject) => {
+    let timeoutId;
+    
+    // Subscribe to receive response
+    const subscription = stompClient.subscribe('/user/topic/driver/response', (message) => {
+      console.log('Received next pending ride response:', message);
+      try {
+        const response = JSON.parse(message.body);
+        
+        // Only handle responses for the nextpendingride endpoint
+        if (response.method === '/driver/nextpendingride') {
+          // Clear the timeout since we got a response
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          
+          try {
+            subscription.unsubscribe();
+          } catch (e) {
+            console.error('Error unsubscribing from next pending ride response:', e);
+          }
+          
+          if (response.status === 200) {
+            if (response.result && response.result.ride) {
+              const ride = response.result.ride;
+              console.log('Found pending ride:', ride);
+              resolve(ride);
+            } else {
+              console.log('No pending rides available');
+              resolve(null);
+            }
+          } else {
+            reject(response.result?.content || 'Failed to get next pending ride');
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        reject('Error parsing server response');
+      }
+    });
+
+    // Request next pending ride
+    console.log('Requesting next pending ride');
+    stompClient.publish({
+      destination: '/app/driver/nextpendingride',
+      body: JSON.stringify({
+        vehicleType: 'car' // Default vehicle type
+      })
+    });
+    
+    // Set a timeout in case the server doesn't respond
+    timeoutId = setTimeout(() => {
+      try {
+        subscription.unsubscribe();
+      } catch (e) {
+        // Subscription might already be closed
+      }
+      reject('Server timeout while getting next pending ride');
+    }, 10000);
+  });
+};
+
+// Accept a ride as a driver
+const acceptRide = (rideId) => {
+  if (!stompClient || !stompClient.connected) {
+    console.error('WebSocket not connected when trying to accept ride');
+    return Promise.reject('WebSocket not connected');
+  }
+
+  return new Promise((resolve, reject) => {
+    let timeoutId;
+    
+    // Subscribe to receive response
+    const subscription = stompClient.subscribe('/user/topic/driver/response', (message) => {
+      console.log('Received accept ride response:', message);
+      try {
+        const response = JSON.parse(message.body);
+        
+        // Only handle responses for the acceptride endpoint
+        if (response.method === '/driver/acceptride') {
+          // Clear the timeout since we got a response
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          
+          try {
+            subscription.unsubscribe();
+          } catch (e) {
+            console.error('Error unsubscribing from accept ride response:', e);
+          }
+          
+          if (response.status === 200) {
+            // Store the active ride
+            activeRideRequest = {
+              id: rideId,
+              status: 'accepted',
+              timestamp: Date.now(),
+              ...response.result.ride
+            };
+            
+            // Persist state change to storage
+            _persistRideStateToStorage();
+            
+            // Notify subscribers of new ride
+            notifyRideStatusChange();
+            
+            resolve(response.result);
+          } else {
+            reject(response.result?.content || 'Failed to accept ride');
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        reject('Error parsing server response');
+      }
+    });
+
+    // Send the ride acceptance request
+    console.log(`Sending acceptance request for ride ${rideId}`);
+    stompClient.publish({
+      destination: '/app/driver/acceptride',
+      body: JSON.stringify({
+        rideID: rideId
+      })
+    });
+    
+    // Set a timeout in case the server doesn't respond
+    timeoutId = setTimeout(() => {
+      try {
+        subscription.unsubscribe();
+      } catch (e) {
+        // Subscription might already be closed
+      }
+      reject('Server timeout while accepting ride');
+    }, 10000);
+  });
+};
+
+// Subscribe to driver assignments
+const subscribeToDriverAssignments = () => {
+  if (!stompClient || !stompClient.connected || !currentUser) {
+    console.error('Cannot subscribe to updates: WebSocket not connected');
+    return;
+  }
+  
+  // Only for drivers
+  if (!currentUser.startsWith('driver')) {
+    return;
+  }
+  
+  console.log('Subscribing to driver assignment notifications');
+  
+  // Subscribe to assignments topic
+  stompClient.subscribe('/user/topic/driver/assignment', (message) => {
+    try {
+      console.log('Received driver assignment notification:', message);
+      const notification = JSON.parse(message.body);
+      
+      // Store the assigned ride as the active ride
+      if (notification.ride) {
+        activeRideRequest = {
+          id: notification.ride.rideID,
+          customer: notification.ride.customer,
+          pickupLoc: notification.ride.pickupLoc,
+          dropoffLoc: notification.ride.dropoffLoc,
+          vehicleType: notification.ride.vehicleType,
+          fare: notification.ride.fare,
+          status: 'assigned',
+          timestamp: Date.now()
+        };
+        
+        // Persist state change to storage
+        _persistRideStateToStorage();
+        
+        // Notify subscribers of new assigned ride
+        notifyRideStatusChange();
+      }
+    } catch (e) {
+      console.error('Error handling driver assignment:', e);
+    }
+  });
+};
+
 export {
   api,
   connectWebSocket,
@@ -1193,5 +1387,8 @@ export {
   subscribeToRideUpdates,
   unsubscribeFromRideUpdates,
   completeRide,
-  customerCompleteRide
+  customerCompleteRide,
+  getNextPendingRide,
+  acceptRide,
+  subscribeToDriverAssignments
 };
