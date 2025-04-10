@@ -739,12 +739,21 @@ const CustomerScreen = () => {
           
           {/* Complete ride button - show when driver is assigned */}
           {activeRide.driver && (
-            <TouchableOpacity 
-              style={styles.cancelBookingButton}
-              onPress={() => setShowCancellationConfirmModal(true)}
-            >
-              <Text style={styles.cancelBookingButtonText}>Cancel Booking</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity 
+                style={styles.completeRideButton}
+                onPress={handleRideComplete}
+              >
+                <Text style={styles.completeRideButtonText}>Confirm Dropoff</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.cancelBookingButton, { marginTop: 10 }]}
+                onPress={() => setShowCancellationConfirmModal(true)}
+              >
+                <Text style={styles.cancelBookingButtonText}>Cancel Booking</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </View>
