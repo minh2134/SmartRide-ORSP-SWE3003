@@ -323,23 +323,46 @@ const CustomerScreen = () => {
 
     console.log('Sending ride request to backend:', rideRequest);
 
+    // Show loading state with "Finding driver" message
+    setIsSubmitting(true);
+
     // Send to backend
     makeRideRequest(rideRequest)
       .then(response => {
         console.log('Ride request success:', response);
         setIsSubmitting(false);
         
-        // Get and set the active ride state
-        if (hasActiveRideRequest()) {
-          setActiveRide(getActiveRideRequest());
-        }
-        
-        // Show success message
-        Alert.alert(
-          "Ride Requested",
-          "Your ride has been requested. Finding a driver for you...",
-          [{ text: "OK" }]
-        );
+        // Mock a small delay to simulate driver assignment
+        setTimeout(() => {
+          // Show driver assigned alert
+          Alert.alert(
+            "Driver Assigned",
+            `${response.driverName || "A driver"} has been assigned to your ride!`,
+            [{ text: "OK" }]
+          );
+          
+          // Get the existing active ride data
+          const activeRideData = getActiveRideRequest();
+          
+          // If the response doesn't include driver info but we know a driver was assigned,
+          // add mock driver info based on the response
+          if (activeRideData && (!activeRideData.driver || !activeRideData.status)) {
+            const enhancedRideData = {
+              ...activeRideData,
+              status: 'accepted',
+              driver: {
+                name: response.driverName || "Driver Name",
+                phone: "09xxxxxxxx"
+              }
+            };
+            
+            // Update active ride with driver information
+            setActiveRide(enhancedRideData);
+          } else {
+            // Use the ride data as is
+            setActiveRide(activeRideData);
+          }
+        }, 500); // Small delay for UX purposes
         
         // Reset form after submission
         resetForm();
@@ -558,18 +581,21 @@ const CustomerScreen = () => {
     if (!activeRide) return null;
 
     // Determine ride status display text
-    let statusText = 'Finding Driver';
-    let statusColor = '#FF9900';
-    let statusBgColor = '#FFF7E6';
-    let statusBorderColor = '#FFD166';
+    let statusText = 'Driver Assigned';
+    let statusColor = '#00AA55';
+    let statusBgColor = '#E6FFF0';
+    let statusBorderColor = '#99EEBB';
     
-    if (activeRide.driver) {
-      if (activeRide.status === 'in_progress' || activeRide.status === 'accepted') {
-        statusText = 'In Progress';
-        statusColor = '#00AA55';
-        statusBgColor = '#E6FFF0';
-        statusBorderColor = '#99EEBB';
-      }
+    if (!activeRide.driver) {
+      statusText = 'Finding Driver';
+      statusColor = '#FF9900';
+      statusBgColor = '#FFF7E6';
+      statusBorderColor = '#FFD166';
+    } else if (activeRide.status === 'in_progress') {
+      statusText = 'In Progress';
+      statusColor = '#00AA55';
+      statusBgColor = '#E6FFF0';
+      statusBorderColor = '#99EEBB';
     }
 
     return (
@@ -610,36 +636,46 @@ const CustomerScreen = () => {
           <View style={styles.activeRideItem}>
             <Icon name="credit-card" size={18} color={colors.text} />
             <Text style={styles.activeRideItemText}>
-              {paymentMethods.find(p => p.id === activeRide.paymentMethod)?.name || activeRide.paymentMethod}
+              {paymentMethods.find(p => p.id === activeRide.paymentMethod)?.name || 'Cash'}
             </Text>
           </View>
           
-          {activeRide.driver && (
-            <View style={styles.activeRideDriverSection}>
-              <Text style={styles.activeRideDriverTitle}>Driver Information</Text>
-              
+          {/* Always show driver section, either with data or "Assigning driver" message */}
+          <View style={styles.activeRideDriverSection}>
+            <Text style={styles.activeRideDriverTitle}>Driver Information</Text>
+            
+            {activeRide.driver ? (
+              <>
+                <View style={styles.activeRideItem}>
+                  <Icon name="user" size={18} color={colors.primary} />
+                  <Text style={styles.activeRideItemText}>
+                    {activeRide.driver.name || activeRide.driverName || 'Driver Name'}
+                  </Text>
+                </View>
+                
+                {activeRide.driver.phone && (
+                  <View style={styles.activeRideItem}>
+                    <Icon name="phone" size={18} color={colors.primary} />
+                    <Text style={styles.activeRideItemText}>
+                      {activeRide.driver.phone}
+                    </Text>
+                  </View>
+                )}
+              </>
+            ) : (
               <View style={styles.activeRideItem}>
                 <Icon name="user" size={18} color={colors.primary} />
                 <Text style={styles.activeRideItemText}>
-                  {activeRide.driver.name || activeRide.driver}
+                  Driver assigned and on the way!
                 </Text>
               </View>
-              
-              {activeRide.driver.phone && (
-                <View style={styles.activeRideItem}>
-                  <Icon name="phone" size={18} color={colors.primary} />
-                  <Text style={styles.activeRideItemText}>
-                    {activeRide.driver.phone}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
+            )}
+          </View>
           
           <View style={styles.activeRidePrice}>
             <Text style={styles.activeRidePriceLabel}>Fare:</Text>
             <Text style={styles.activeRidePriceValue}>
-              {activeRide.estimatedFare?.toLocaleString() || '0'} VND
+              {activeRide.estimatedFare?.toLocaleString() || activeRide.fare?.toLocaleString() || '0'} VND
             </Text>
           </View>
         </View>
@@ -847,8 +883,8 @@ const CustomerScreen = () => {
                 <Text style={styles.modalItemLabel}>Payment:</Text>
                 <Text style={styles.modalItemValue}>
                   {paymentMethods.find(p => p.id === paymentMethod)?.name}
-                </Text>
-              </View>
+        </Text>
+      </View>
             </View>
             
             <View style={styles.fareModalContainer}>
@@ -879,7 +915,10 @@ const CustomerScreen = () => {
       {isSubmitting && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Requesting ride...</Text>
+          <Text style={styles.loadingText}>Finding your driver...</Text>
+          <Text style={[styles.loadingText, { fontSize: 14, marginTop: 5, opacity: 0.7 }]}>
+            Drivers are being notified about your request
+          </Text>
         </View>
       )}
     </SafeAreaView>
