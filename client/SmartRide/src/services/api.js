@@ -1,6 +1,7 @@
 import axios from 'axios';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Use 10.0.2.2 to access localhost from Android emulator
 const BASE_URL = 'http://10.0.2.2:8080';
@@ -122,10 +123,15 @@ const connectWebSocket = (username, password, onConnect, onError) => {
     clearTimeout(connectionTimeout);
     stompClient = client;
     
-    // Check for any active rides from server after authentication
-    checkActiveRides().then(() => {
+    // Restore any saved ride state first
+    _restoreRideStateFromStorage().then(() => {
+      // Then check for any active rides from server
+      return checkActiveRides();
+    }).then(() => {
       // Notify subscribers of potential state change
       notifyRideStatusChange();
+    }).catch(error => {
+      console.error('Error restoring ride state:', error);
     });
     
     // Subscribe to real-time updates if we're a customer
@@ -344,15 +350,21 @@ const disconnectWebSocket = () => {
       window.activeSubscriptions = [];
     }
     
+    // Before disconnecting, persist the current ride state to storage
+    // This is critical for maintaining ride state across sessions
+    _persistRideStateToStorage();
+    
+    // Disconnect the WebSocket client
     stompClient.deactivate();
     stompClient = null;
     authToken = null;
     
-    // Don't clear active ride when disconnecting, so it persists until explicitly cancelled
-    // This allows remembering ride state across app restarts
-    
+    // DON'T clear activeRideRequest here - we want to persist it across logout
+    // Only store the currentUser so we can check if it's the same user when they log back in
+    const oldUser = currentUser;
     currentUser = null;
-    console.log('Disconnected from WebSocket');
+    
+    console.log('Disconnected from WebSocket, preserved ride state for user:', oldUser);
   }
 };
 
@@ -413,6 +425,10 @@ const makeRideRequest = (rideDetails) => {
               status: 'pending', // pending = finding driver
               timestamp: Date.now()
             };
+            
+            // Persist to storage
+            _persistRideStateToStorage();
+            
             resolve(response.result);
           } else {
             reject(response.result?.content || 'Failed to create ride');
@@ -494,6 +510,10 @@ const cancelRideRequest = () => {
           if (response.status === 200) {
             // Clear the active ride request
             activeRideRequest = null;
+            
+            // Persist state change to storage
+            _persistRideStateToStorage();
+            
             resolve(response.result);
           } else {
             reject(response.result?.content || 'Failed to cancel ride');
@@ -526,6 +546,10 @@ const cancelRideRequest = () => {
       // Since we know about the server-side bug, we'll handle it client-side
       // Clear the ride locally, since the server probably crashed
       activeRideRequest = null;
+      
+      // Persist state change to storage
+      _persistRideStateToStorage();
+      
       notifyRideStatusChange();
       
       reject('Server timeout while cancelling ride. The ride has been cleared locally.');
@@ -539,6 +563,189 @@ const cancelRideRequest = () => {
     notifyRideStatusChange();
     throw error;
   });
+};
+
+// Driver confirms pickup of customer
+const confirmRidePickup = (rideId) => {
+  if (!stompClient || !stompClient.connected) {
+    console.error('WebSocket not connected when trying to confirm pickup');
+    return Promise.reject('WebSocket not connected');
+  }
+
+  if (!activeRideRequest) {
+    console.error('No active ride to confirm pickup');
+    return Promise.reject('No active ride to confirm pickup');
+  }
+
+  return new Promise((resolve, reject) => {
+    let timeoutId;
+    
+    // Subscribe to receive response
+    const subscription = stompClient.subscribe('/user/topic/driver/response', (message) => {
+      console.log('Received confirm pickup response:', message);
+      try {
+        const response = JSON.parse(message.body);
+        
+        // Only handle responses for the confirmpickup endpoint
+        if (response.method === '/driver/confirmpickup') {
+          // Clear the timeout since we got a response
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          
+          try {
+            subscription.unsubscribe();
+          } catch (e) {
+            console.error('Error unsubscribing from confirm pickup response:', e);
+          }
+          
+          if (response.status === 200) {
+            // Update the ride status
+            if (activeRideRequest) {
+              activeRideRequest.status = 'in_progress';
+              // Persist to storage
+              _persistRideStateToStorage();
+            }
+            
+            resolve(response.result);
+          } else {
+            reject(response.result?.content || 'Failed to confirm pickup');
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        reject('Error parsing server response');
+      }
+    });
+
+    // Send the pickup confirmation request
+    console.log(`Sending pickup confirmation for ride ${rideId}`);
+    stompClient.publish({
+      destination: '/app/driver/confirmpickup',
+      body: JSON.stringify({
+        rideID: rideId
+      })
+    });
+    
+    // Set a timeout in case the server doesn't respond
+    timeoutId = setTimeout(() => {
+      try {
+        subscription.unsubscribe();
+      } catch (e) {
+        // Subscription might already be closed
+      }
+      reject('Server timeout while confirming pickup');
+    }, 10000);
+  }).then(result => {
+    // Notify subscribers of ride status change
+    notifyRideStatusChange();
+    return result;
+  });
+};
+
+// Driver completes a ride
+const completeRide = (rideId) => {
+  if (!stompClient || !stompClient.connected) {
+    console.error('WebSocket not connected when trying to complete ride');
+    return Promise.reject('WebSocket not connected');
+  }
+
+  if (!activeRideRequest) {
+    console.error('No active ride to complete');
+    return Promise.reject('No active ride to complete');
+  }
+
+  return new Promise((resolve, reject) => {
+    let timeoutId;
+    
+    // Subscribe to receive response
+    const subscription = stompClient.subscribe('/user/topic/driver/response', (message) => {
+      console.log('Received complete ride response:', message);
+      try {
+        const response = JSON.parse(message.body);
+        
+        // Only handle responses for the completeride endpoint
+        if (response.method === '/driver/completeride') {
+          // Clear the timeout since we got a response
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          
+          try {
+            subscription.unsubscribe();
+          } catch (e) {
+            console.error('Error unsubscribing from complete ride response:', e);
+          }
+          
+          if (response.status === 200) {
+            // Clear the active ride since it's completed
+            activeRideRequest = null;
+            // Persist state change to storage
+            _persistRideStateToStorage();
+            
+            resolve(response.result);
+          } else {
+            reject(response.result?.content || 'Failed to complete ride');
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        reject('Error parsing server response');
+      }
+    });
+
+    // Send the ride completion request
+    console.log(`Sending completion request for ride ${rideId}`);
+    stompClient.publish({
+      destination: '/app/driver/completeride',
+      body: JSON.stringify({
+        rideID: rideId
+      })
+    });
+    
+    // Set a timeout in case the server doesn't respond
+    timeoutId = setTimeout(() => {
+      try {
+        subscription.unsubscribe();
+      } catch (e) {
+        // Subscription might already be closed
+      }
+      reject('Server timeout while completing ride');
+    }, 10000);
+  }).then(result => {
+    // Notify subscribers of ride status change
+    notifyRideStatusChange();
+    return result;
+  });
+};
+
+// Send location update to server
+const sendLocationUpdate = (latitude, longitude, rideId) => {
+  if (!stompClient || !stompClient.connected) {
+    console.error('WebSocket not connected when trying to send location update');
+    return Promise.reject('WebSocket not connected');
+  }
+
+  const userType = currentUser?.startsWith('driver') ? 'driver' : 'customer';
+  
+  // Create location update message
+  const locationUpdate = {
+    latitude,
+    longitude,
+    userType,
+    username: currentUser,
+    rideID: rideId
+  };
+
+  console.log(`Sending ${userType} location update:`, locationUpdate);
+  
+  // Send on the appropriate destination based on user type
+  stompClient.publish({
+    destination: `/app/${userType}/location`,
+    body: JSON.stringify(locationUpdate)
+  });
+  
+  return Promise.resolve();
 };
 
 // Format the ride data to match the UI needs
@@ -718,6 +925,93 @@ const subscribeToRealTimeUpdates = () => {
   return notificationSubscription;
 };
 
+// Storage keys for persisting ride state
+const STORAGE_KEYS = {
+  ACTIVE_RIDE_REQUEST: 'smartride_active_ride_request',
+  ACTIVE_DRIVER_RIDE: 'smartride_active_driver_ride',
+  CURRENT_USER: 'smartride_current_user'
+};
+
+// Persist ride state to AsyncStorage
+const _persistRideStateToStorage = async () => {
+  try {
+    // Save current user
+    if (currentUser) {
+      await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_USER, currentUser);
+    } else {
+      await AsyncStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    }
+    
+    // Save active ride request
+    if (activeRideRequest) {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.ACTIVE_RIDE_REQUEST, 
+        JSON.stringify(activeRideRequest)
+      );
+    } else {
+      await AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_RIDE_REQUEST);
+    }
+    
+    console.log('Ride state persisted to storage');
+  } catch (e) {
+    console.error('Error persisting ride state:', e);
+  }
+};
+
+// Restore ride state from AsyncStorage
+const _restoreRideStateFromStorage = async () => {
+  try {
+    // Get the stored user
+    const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    
+    // Get any stored ride request
+    const storedRideRequest = await AsyncStorage.getItem(STORAGE_KEYS.ACTIVE_RIDE_REQUEST);
+    
+    if (storedRideRequest) {
+      try {
+        const parsedRideRequest = JSON.parse(storedRideRequest);
+        
+        // Check if this is for the same user as before
+        if (storedUser && storedUser === currentUser) {
+          console.log('Restoring active ride for same user:', parsedRideRequest);
+          activeRideRequest = parsedRideRequest;
+        } else if (currentUser) {
+          // Different user but still restore the ride if it belongs to this user
+          // This handles the case where AsyncStorage.setItem for CURRENT_USER failed
+          // but the ride data was saved successfully
+          if (parsedRideRequest.customer === currentUser || 
+              (currentUser.startsWith('driver') && parsedRideRequest.driver === currentUser)) {
+            console.log('Restoring active ride for user after relogin:', parsedRideRequest);
+            activeRideRequest = parsedRideRequest;
+          } else {
+            // This ride belongs to a different user, don't restore it
+            console.log('Stored ride belongs to a different user, not restoring');
+            activeRideRequest = null;
+          }
+        } else {
+          // No current user, can't restore ride state yet
+          console.log('No current user, cannot restore ride state');
+          activeRideRequest = null;
+        }
+      } catch (e) {
+        console.error('Error parsing stored ride request:', e);
+        activeRideRequest = null;
+      }
+    } else {
+      console.log('No stored ride request found');
+      activeRideRequest = null;
+    }
+    
+    // Always save the current user to storage
+    if (currentUser) {
+      await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_USER, currentUser);
+    }
+  } catch (e) {
+    console.error('Error restoring ride state:', e);
+    activeRideRequest = null;
+  }
+};
+
 export {
   api,
   connectWebSocket,
@@ -733,5 +1027,8 @@ export {
   clearActiveRideRequest,
   cancelRideRequest,
   subscribeToRideUpdates,
-  unsubscribeFromRideUpdates
+  unsubscribeFromRideUpdates,
+  confirmRidePickup,
+  completeRide,
+  sendLocationUpdate
 };

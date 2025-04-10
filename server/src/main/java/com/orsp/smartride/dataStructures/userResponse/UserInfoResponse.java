@@ -1,6 +1,7 @@
 package com.orsp.smartride.dataStructures.userResponse;
 
 import com.orsp.smartride.dataStructures.UserInfo;
+import com.orsp.smartride.implementations.driver.DriverInfo;
 
 public class UserInfoResponse extends UserResponse {
 	
@@ -44,5 +45,13 @@ public class UserInfoResponse extends UserResponse {
 		this.sex = that.sex;
 		this.age = that.age;
 		this.phone = that.phone;
+	}
+	
+	public UserInfoResponse(DriverInfo that) {
+		this.username = that.getUsername();
+		this.name = that.getName();
+		this.sex = that.getSex();
+		this.age = that.getAge();
+		this.phone = that.getPhoneNumber();
 	}
 }

@@ -1,24 +1,35 @@
 package com.orsp.smartride.dataStructures;
 
 /**
- * Location
+ * Location - Represents a geographical location
  */
 public class Location {
-
-	private float lat;
-	private float lon;
-
-	public Location() {}
-	public Location(float lat, float lon) {
-		this.lat = lat;
-		this.lon = lon;
+	private double latitude;
+	private double longitude;
+	
+	public Location() {
+		this.latitude = 0.0;
+		this.longitude = 0.0;
 	}
-
-	public float getLat() {
-		return lat;
+	
+	public Location(double latitude, double longitude) {
+		this.latitude = latitude;
+		this.longitude = longitude;
 	}
-
-	public float getLon() {
-		return lon;
+	
+	public double getLatitude() {
+		return latitude;
+	}
+	
+	public double getLongitude() {
+		return longitude;
+	}
+	
+	public void setLatitude(double latitude) {
+		this.latitude = latitude;
+	}
+	
+	public void setLongitude(double longitude) {
+		this.longitude = longitude;
 	}
 }

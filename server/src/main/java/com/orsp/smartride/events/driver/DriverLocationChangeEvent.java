@@ -5,9 +5,11 @@ import org.springframework.context.ApplicationEvent;
 import com.orsp.smartride.dataStructures.Location;
 
 /**
- * DriverLocationChangeEvent
+ * DriverLocationChangeEvent - Event triggered when a driver's location changes
  */
 public class DriverLocationChangeEvent extends ApplicationEvent {
+
+	private static final long serialVersionUID = 1L;
 
 	private int rideID;
 	private Location location;

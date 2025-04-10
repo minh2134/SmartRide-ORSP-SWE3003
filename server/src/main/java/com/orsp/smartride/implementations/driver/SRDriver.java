@@ -4,21 +4,34 @@ import com.orsp.smartride.coreLogic.driver.Driver;
 import com.orsp.smartride.dataStructures.Location;
 
 /**
- * SRDriver
+ * SRDriver - Implementation of Driver for SmartRide
  */
 public class SRDriver extends Driver {
 	public DriverInfo driverInfo;
 	public Location location;
+	private boolean isReady;
 
-	public SRDriver(String username, String license) {
-		this.driverInfo = new DriverInfo(username, license);
+	public SRDriver() {
+		this.driverInfo = new DriverInfo();
+		this.location = new Location(0, 0);
+		this.isReady = false;
 	}
 
 	public SRDriver(DriverInfo driverInfo) {
-		this.driverInfo = new DriverInfo(driverInfo);
+		this.driverInfo = driverInfo;
+		this.location = new Location(0, 0);
+		this.isReady = false;
 	}
 
 	public String getUsername() {
 		return driverInfo.getUsername();
+	}
+
+	public boolean isReady() {
+		return isReady;
+	}
+
+	public void setReady(boolean ready) {
+		isReady = ready;
 	}
 }

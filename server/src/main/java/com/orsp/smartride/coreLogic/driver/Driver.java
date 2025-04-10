@@ -19,6 +19,14 @@ public class Driver{
 	public int getRideID() {
 		return ride.getRideID();
 	}
+	
+	public Ride getRide() {
+		return ride;
+	}
+	
+	public void setRide(Ride ride) {
+		this.ride = ride;
+	}
 
 }
 
