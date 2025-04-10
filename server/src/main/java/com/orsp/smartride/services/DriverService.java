@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.orsp.smartride.coreLogic.ride.Ride;
 import com.orsp.smartride.dataStructures.Location;
+import com.orsp.smartride.events.driver.DriverAssignmentEvent;
 import com.orsp.smartride.events.driver.DriverLocationChangeEvent;
 import com.orsp.smartride.implementations.driver.DriverInfo;
 import com.orsp.smartride.implementations.driver.SRDriver;
@@ -55,6 +56,14 @@ public class DriverService {
 			if (driver.isInARide()) {
 				ride.setDriver(driver);
 			}
+		}
+		
+		// found a driver
+		if (driver != null) {
+			// then publish an event 
+			DriverAssignmentEvent event = new DriverAssignmentEvent(
+					this, ride);
+			applicationEventPublisher.publishEvent(event);
 		}
 
 		return driver;

@@ -23,4 +23,8 @@ public class SRCustomer extends Customer {
 		return userInfo;
 	}
 
+	public String getName() {
+		return userInfo.name;
+	}
+
 }
