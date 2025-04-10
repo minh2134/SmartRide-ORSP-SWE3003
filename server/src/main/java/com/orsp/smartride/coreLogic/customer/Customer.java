@@ -12,8 +12,11 @@ abstract public class Customer {
 			ride = new Ride(this, rideInfo, rideID, timeStamp);
 		}
 
-		boolean result = ride.findDriver();
 		return ride;
+	}
+
+	public void setRideHelper(Ride ride) {
+		this.ride = ride;
 	}
 	
 	public boolean pay(Payment paymentMethod) {
@@ -37,5 +40,9 @@ abstract public class Customer {
 
 	public boolean isInARide() {
 		return ride != null;
+	}
+
+	public Ride getRide() {
+		return ride;
 	}
 }

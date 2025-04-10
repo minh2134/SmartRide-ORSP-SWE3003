@@ -21,4 +21,8 @@ public class SRDriver extends Driver {
 	public String getUsername() {
 		return driverInfo.getUsername();
 	}
+
+	public String getName() {
+		return driverInfo.name;
+	}
 }

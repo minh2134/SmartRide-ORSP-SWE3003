@@ -17,6 +17,7 @@ import com.orsp.smartride.events.ride.RideCreationEvent;
 import com.orsp.smartride.events.ride.RideLocationChange;
 import com.orsp.smartride.implementations.customer.SRCustomer;
 import com.orsp.smartride.implementations.database.SRDatabase;
+import com.orsp.smartride.implementations.driver.SRDriver;
 import com.orsp.smartride.implementations.payment.GenericPaymentMethod;
 
 @Service
@@ -68,18 +69,14 @@ public class CustomerService {
 		RideRow rr = new RideRow(customer.getUsername(), rrq);
 		int rideID = -1;
 		boolean wasInARide = customer.isInARide();
+		Ride ride;
 		if (!wasInARide) {
 			rideID = db.insertRide(rr);
 			System.out.println(rideID + "<- this is the new ride ID");
+			ride =  new Ride(customer, rrq, rideID, rr.timeStamp);
 		}
-
-		Ride ride =  customer.makeRide(rrq, rideID, rr.timeStamp);
 		
-		// publish the event so that the RideService can handle it
-		if (!wasInARide) {
-			RideCreationEvent event = new RideCreationEvent(this, ride);
-			applicationEventPublisher.publishEvent(event);
-		}
+		ride = customer.getRide();
 
 		return ride;
 	}

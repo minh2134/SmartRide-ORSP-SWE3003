@@ -2,7 +2,6 @@ package com.orsp.smartride.coreLogic.driver;
 
 import com.orsp.smartride.coreLogic.ride.Ride;
 
-// TODO: implement Driver class
 public class Driver{
 	protected Ride ride;
 	
@@ -16,8 +15,16 @@ public class Driver{
 		ride = null;
 	}
 
+	public void setRideHelper(Ride ride) {
+		this.ride = ride;
+	}
+
 	public int getRideID() {
 		return ride.getRideID();
+	}
+
+	public boolean isInARide() {
+		return (ride == null);
 	}
 
 }

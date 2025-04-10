@@ -14,10 +14,10 @@ public class Ride {
 	private String vehicleType;
 	private long timeStamp;
 
-	private static long nextRideID = 1;
-
 	public Ride(Customer customer, RideInfo rrq, int rideID, long timeStamp) {
 		this.customer = customer;
+		customer.setRideHelper(this);
+
 		this.pickupLoc = rrq.getPickupLoc();
 		this.dropoffLoc = rrq.getDropoffLoc();
 		this.fare = rrq.getEstimatedFare();
@@ -26,9 +26,9 @@ public class Ride {
 		this.timeStamp = timeStamp;
 	}
 
-	public boolean findDriver() {
-		// TODO: query database, find driver, associate, then return the status
-		return true;
+	public void setDriver(Driver driver) {
+		this.driver = driver;
+		driver.setRideHelper(this);
 	}
 
 	public void cancel() {

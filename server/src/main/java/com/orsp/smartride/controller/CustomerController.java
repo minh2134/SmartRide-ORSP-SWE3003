@@ -4,6 +4,7 @@ package com.orsp.smartride.controller;
 import java.security.Principal;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -19,7 +20,10 @@ import com.orsp.smartride.dataStructures.UserInfo;
 import com.orsp.smartride.dataStructures.userResponse.ErrorResponse;
 import com.orsp.smartride.dataStructures.userResponse.MakeRideResponse;
 import com.orsp.smartride.dataStructures.userResponse.UserInfoResponse;
+import com.orsp.smartride.events.ride.RideCreationEvent;
+import com.orsp.smartride.implementations.driver.SRDriver;
 import com.orsp.smartride.services.CustomerService;
+import com.orsp.smartride.services.DriverService;
 
 @Controller
 public class CustomerController {
@@ -31,6 +35,12 @@ public class CustomerController {
 
 	@Autowired
 	private CustomerService cusService;
+
+	@Autowired
+	private DriverService driService;
+
+	@Autowired
+	private ApplicationEventPublisher applicationEventPublisher;
 
 	@MessageMapping("/customer/info")
 	@SendToUser("/topic/customer/response")
@@ -65,7 +75,24 @@ public class CustomerController {
 			return new Response(401, method, error);
 		}
 
+		boolean wasInARide = cusService.isInARide(username);
+
 		Ride ride = cusService.makeRide(username, rrq);
+
+
+		// publish the event so that the RideService can handle it
+		if (!wasInARide) {
+			SRDriver driver = driService.assignDriver(ride);
+			if (driver != null) {
+				RideCreationEvent event = new RideCreationEvent(this, ride);
+				applicationEventPublisher.publishEvent(event);
+			} 
+			else {
+				ErrorResponse error = new ErrorResponse("No driver found");
+				return new Response(404, method, error);
+			}
+				
+		}
 
 		MakeRideResponse result = new MakeRideResponse(ride);
 		return new Response(200, method, result);
