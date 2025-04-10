@@ -15,7 +15,25 @@ stompClient.onConnect = (frame) => {
 };
 
 function showRawJSON(message) {
-	$("#greetings").append("<tr><td>" + message + "</td></tr>");
+	json = JSON.parse(message);
+	ridetable = json.result.rides;
+
+	$("#greetings").empty();
+
+
+	for (let i = 0; i < ridetable.length; i++) {
+		$("#greetings").append("<tr>");
+		$("#greetings").append("<td>" + ridetable[i].rideID + "</td>");
+		$("#greetings").append("<td>" + ridetable[i].customer + "</td>");
+		$("#greetings").append("<td>" + ridetable[i].driver + "</td>");
+		$("#greetings").append("<td>" + ridetable[i].pickupLoc + "</td>");
+		$("#greetings").append("<td>" + ridetable[i].dropoffLoc + "</td>");
+		$("#greetings").append("<td>" + ridetable[i].vehicleType + "</td>");
+		$("#greetings").append("<td>" + ridetable[i].isDone + "</td>");
+		$("#greetings").append("<td>" + ridetable[i].timeStamp + "</td>");
+		$("#greetings").append("</tr>");
+	}
+
 }
 
 stompClient.onWebSocketError = (error) => {
